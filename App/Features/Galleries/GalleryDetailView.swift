@@ -71,20 +71,24 @@ struct GalleryDetailView: View {
                     }
 
                     ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(tagTypeTitle(type)).font(.headline)
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), alignment: .leading)], alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(tagTypeTitle(type)).font(.subheadline.weight(.semibold))
+                            FlowLayout {
                                 ForEach(gallery.tags.filter { $0.type == type }) { tag in
                                     NavigationLink {
                                         TagGalleriesView(api: api, tag: tag)
                                     } label: {
-                                        HStack(spacing: 6) {
+                                        HStack(spacing: 4) {
                                             Text(verbatim: tag.name)
+                                                .fixedSize(horizontal: false, vertical: true)
                                             Text(tag.count.formatted(.number.notation(.compactName)))
+                                                .font(.caption2)
                                                 .foregroundStyle(.secondary)
+                                                .fixedSize()
                                         }
                                         .font(.caption)
-                                        .padding(8)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 5)
                                         .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                                     }
                                 }
