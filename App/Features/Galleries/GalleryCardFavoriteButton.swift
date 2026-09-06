@@ -16,25 +16,26 @@ struct GalleryCardFavoriteButton: View {
                 catch { self.error = error; showsError = true }
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 if favorites.updating.contains(gallery.id) {
-                    ProgressView().controlSize(.mini).tint(.white)
+                    ProgressView().controlSize(.mini)
+                        .tint(Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255))
                 } else {
                     Image(systemName: favorites.states[gallery.id]?.favorited == true ? "heart.fill" : "heart")
-                        .foregroundStyle(favorites.states[gallery.id]?.favorited == true
-                            ? Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255) : .white)
+                        .foregroundStyle(Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255))
                 }
                 if showsCount {
                     Text(favorites.states[gallery.id]?.count ?? gallery.numFavorites, format: .number)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.black.opacity(0.8))
                         .monospacedDigit()
                 }
             }
-            .font(.caption2)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
-            .frame(minWidth: 44, minHeight: 44, alignment: .bottomLeading)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, showsCount ? 10 : 0)
+            .frame(minWidth: 32, minHeight: 32)
+            .background(.white.opacity(0.95), in: Capsule())
+            .shadow(color: .black.opacity(0.16), radius: 3, y: 1)
+            .frame(minWidth: 44, minHeight: 44, alignment: .topTrailing)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

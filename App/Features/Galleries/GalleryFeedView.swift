@@ -139,21 +139,21 @@ private struct GalleryCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .overlay(alignment: .bottom) {
-                HStack(alignment: .bottom, spacing: 4) {
-                    GalleryCardFavoriteButton(gallery: gallery, api: api, showsCount: showsFavoriteCount)
-                    Spacer(minLength: 0)
-                    if gallery.numPages > 0 {
-                        Text("\(gallery.numPages) pages")
-                            .foregroundStyle(.white)
-                            .font(.caption2.monospacedDigit())
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 4)
-                            .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
-                            .allowsHitTesting(false)
-                    }
+            .overlay(alignment: .topTrailing) {
+                GalleryCardFavoriteButton(gallery: gallery, api: api, showsCount: showsFavoriteCount)
+                    .padding(6)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if gallery.numPages > 0 {
+                    Text("\(gallery.numPages) pages")
+                        .foregroundStyle(.white)
+                        .font(.caption2.monospacedDigit())
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
+                        .padding(6)
+                        .allowsHitTesting(false)
                 }
-                .padding(6)
             }
 
             NavigationLink {
