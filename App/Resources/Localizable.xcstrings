@@ -1,6 +1,121 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャンセル"
+          }
+        }
+      }
+    },
+    "Clear cached data?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear cached data?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定清理缓存？"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャッシュを削除しますか？"
+          }
+        }
+      }
+    },
+    "Cached images and gallery details will be removed. Browsing history will be kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cached images and gallery details will be removed. Browsing history will be kept."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将删除缓存的图片和作品详情，保留浏览历史。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャッシュされた画像と作品詳細を削除します。閲覧履歴は保持されます。"
+          }
+        }
+      }
+    },
+    "Sign out?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定退出登录？"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログアウトしますか？"
+          }
+        }
+      }
+    },
+    "You will need your API key to sign in again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You will need your API key to sign in again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再次登录需要输入 API Key。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再ログインにはAPIキーの入力が必要です。"
+          }
+        }
+      }
+    },
     "Expand": {
       "extractionState": "manual",
       "localizations": {
@@ -438,25 +553,25 @@
         }
       }
     },
-    "Current Cache Size" : {
+    "Cache Size" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Current Cache Size"
+            "value": "Cache Size"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "当前缓存大小"
+            "value": "缓存大小"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "現在のキャッシュサイズ"
+            "value": "キャッシュサイズ"
           }
         }
       }

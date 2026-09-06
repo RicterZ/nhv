@@ -13,6 +13,8 @@ struct ProfileView: View {
     @State private var showsCacheCleared = false
     @State private var cacheError: (any Error)?
     @State private var showsCacheError = false
+    @State private var showsClearCacheConfirmation = false
+    @State private var showsSignOutConfirmation = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     let user: CurrentUser
@@ -23,7 +25,7 @@ struct ProfileView: View {
         List {
             Section("Account") {
                 LabeledContent("Username", value: user.username)
-                Button("Sign Out", role: .destructive) { session.signOut() }
+                Button("Sign Out", role: .destructive) { showsSignOutConfirmation = true }
                 if let error = session.error { InlineErrorView(error: error) }
             }
             Section {
@@ -56,7 +58,7 @@ struct ProfileView: View {
                 Text("Settings")
             }
             Section {
-                LabeledContent("Current Cache Size") {
+                LabeledContent("Cache Size") {
                     if isLoadingCacheSize {
                         ProgressView()
                     } else if let cacheSize {
@@ -77,19 +79,10 @@ struct ProfileView: View {
                     }
                 }
                 Button(role: .destructive) {
-                    Task {
-                        do {
-                            try await media.clearImageCache()
-                            showsCacheCleared = true
-                        } catch {
-                            cacheError = error
-                            showsCacheError = true
-                        }
-                        await refreshCacheSize()
-                    }
+                    showsClearCacheConfirmation = true
                 } label: {
                     HStack {
-                        Label("Clear Cache", systemImage: "trash")
+                        Text("Clear Cache")
                         Spacer()
                         if media.isClearingCache { ProgressView() }
                     }
@@ -139,6 +132,18 @@ struct ProfileView: View {
                 Task { await refreshHistoryCount() }
             }
         }
+        .alert("Clear cached data?", isPresented: $showsClearCacheConfirmation) {
+            Button("Clear Cache", role: .destructive) { Task { await clearCache() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Cached images and gallery details will be removed. Browsing history will be kept.")
+        }
+        .alert("Sign out?", isPresented: $showsSignOutConfirmation) {
+            Button("Sign Out", role: .destructive) { session.signOut() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You will need your API key to sign in again.")
+        }
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
         }
@@ -147,6 +152,18 @@ struct ProfileView: View {
         } message: {
             if let cacheError { Text(ErrorMessage.text(for: cacheError)) }
         }
+    }
+
+    private func clearCache() async {
+        guard !media.isClearingCache else { return }
+        do {
+            try await media.clearImageCache()
+            showsCacheCleared = true
+        } catch {
+            cacheError = error
+            showsCacheError = true
+        }
+        await refreshCacheSize()
     }
 
     private func refreshHistoryCount() async {

@@ -20,18 +20,19 @@ struct SearchView: View {
 
     var body: some View {
         Group {
-            if isSearchPresented && !SearchSyntax.suggestions(for: input).isEmpty {
+            if isSearchPresented {
                 GalleryScrollView(header: { filters }) {
                     searchHistory
-                    SearchSyntaxSuggestions(input: input) { syntax in
-                        let completion = syntax.completion(in: input)
-                        input = completion.text
-                        completionRequest = SearchCompletionRequest(completion: completion)
+                    if !SearchSyntax.suggestions(for: input).isEmpty {
+                        SearchSyntaxSuggestions(input: input) { syntax in
+                            let completion = syntax.completion(in: input)
+                            input = completion.text
+                            completionRequest = SearchCompletionRequest(completion: completion)
+                        }
                     }
                 }
             } else if terms.isEmpty {
                 GalleryScrollView(header: { filters }) {
-                    searchHistory
                     ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
                 }
             } else {
