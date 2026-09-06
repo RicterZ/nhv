@@ -1,6 +1,8 @@
 # NHV
 
-An unofficial nhentai iOS client written in Swift for browsing, searching, and managing favorites. Currently in development; build and install it yourself with Xcode.
+An unofficial nhentai iOS client written in Swift for browsing, searching, and managing favorites. 
+
+<img width="4435" height="2796" alt="github-preview" src="https://github.com/user-attachments/assets/9171f053-0dc3-4fe7-a685-71fc2eb071f6" />
 
 ## Features
 
