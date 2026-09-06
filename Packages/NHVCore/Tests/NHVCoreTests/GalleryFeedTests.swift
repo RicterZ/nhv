@@ -153,6 +153,27 @@ private actor ControlledPages {
     #expect(queue.next() == 9)
 }
 
+@Test func firstSixCoversFinishBeforeLaterCoversStart() {
+    var queue = OrderedWorkQueue<Int>(concurrency: 6, batchSize: 6)
+    queue.enqueue(Array(1...15))
+    #expect((0..<6).compactMap { _ in queue.next() } == Array(1...6))
+    // A fast lower cover must not start the next batch while the top one is slow.
+    for id in [6, 4, 2, 5, 3] {
+        queue.finish(id)
+        #expect(queue.next() == nil)
+    }
+    queue.enqueue([7, 8, 16]) // View appearances do not bypass the barrier.
+    queue.finish(1)
+    #expect((0..<6).compactMap { _ in queue.next() } == Array(7...12))
+    #expect(queue.next() == nil)
+    for id in 7...12 { queue.finish(id) }
+    #expect((0..<6).compactMap { _ in queue.next() } == Array(13...16))
+    queue.removeAll()
+    queue.enqueue([20, 21])
+    #expect(queue.next() == 20)
+    #expect(queue.next() == 21)
+}
+
 @Test(arguments: [GalleryQuery.latest, .favorites("abc"), .search("abc", .week), .tag(42, .popular)])
 func collectionQueriesUseServerDefaultPageSize(query: GalleryQuery) async throws {
     let transport = StubTransport(emptyPage)

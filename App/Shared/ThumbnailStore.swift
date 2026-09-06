@@ -11,7 +11,7 @@ final class ThumbnailStore {
     private(set) var failures: Set<URL> = []
     private(set) var isClearingCache = false
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
-    @ObservationIgnored private var queue = OrderedWorkQueue<URL>(concurrency: 4)
+    @ObservationIgnored private var queue = OrderedWorkQueue<URL>(concurrency: 6, batchSize: 6)
     @ObservationIgnored private var active: [URL: Task<Void, Never>] = [:]
     @ObservationIgnored private var resumeTask: Task<Void, Never>?
     @ObservationIgnored private var pausedUntil: Date?
@@ -23,7 +23,7 @@ final class ThumbnailStore {
         let config = URLSessionConfiguration.ephemeral
         config.httpShouldSetCookies = false
         config.httpCookieStorage = nil
-        config.httpMaximumConnectionsPerHost = 4
+        config.httpMaximumConnectionsPerHost = 6
         config.timeoutIntervalForRequest = 25
         config.timeoutIntervalForResource = 40
         responseCache = URLCache(memoryCapacity: 8 * 1024 * 1024, diskCapacity: 96 * 1024 * 1024)
