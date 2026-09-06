@@ -1,20 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Clear search": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": { "state": "translated", "value": "Clear search" }
-        },
-        "zh-Hans": {
-          "stringUnit": { "state": "translated", "value": "清空搜索" }
-        },
-        "ja": {
-          "stringUnit": { "state": "translated", "value": "検索をクリア" }
-        }
-      }
-    },
     "API Key": {
       "extractionState": "manual",
       "localizations": {
