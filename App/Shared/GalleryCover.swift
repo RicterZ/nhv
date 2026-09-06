@@ -8,7 +8,11 @@ struct GalleryCover: View {
         GeometryReader { geometry in
             Group {
                 if let url, let image = media.thumbnails.image(for: url) {
-                    Image(uiImage: image).resizable().scaledToFit()
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .background(Color.white)
                 } else if let url, media.thumbnails.failures.contains(url) {
                     VStack(spacing: 8) {
                         Image(systemName: "photo.badge.exclamationmark")
