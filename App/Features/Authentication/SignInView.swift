@@ -38,9 +38,10 @@ struct SignInView: View {
                         .accessibilityHidden(true)
                         .overlay(alignment: .bottom) {
                             Text("Signing in…")
-                                .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.7))
-                                .offset(y: 40)
+                                .font(.footnote.weight(.medium))
+                                .tracking(0.5)
+                                .foregroundStyle(.white.opacity(0.55))
+                                .offset(y: 36)
                                 .opacity(isAuthenticating ? 1 : 0)
                                 .accessibilityHidden(!isAuthenticating)
                         }

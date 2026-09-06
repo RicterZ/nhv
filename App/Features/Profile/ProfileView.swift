@@ -53,8 +53,13 @@ struct ProfileView: View {
                 }
                 .disabled(media.thumbnails.isClearingCache)
             }
-            Section("About") {
+            Section {
                 LabeledContent("Version", value: appVersion)
+                LabeledContent {
+                    Text(verbatim: "MIT")
+                } label: {
+                    Text(verbatim: "License")
+                }
                 Link(destination: URL(string: "https://github.com/RicterZ/nhv")!) {
                     HStack {
                         Text(verbatim: "GitHub")
@@ -68,13 +73,8 @@ struct ProfileView: View {
                     }
                 }
                 .buttonStyle(.plain)
-            }
-            Section {
-                LabeledContent {
-                    Text(verbatim: "MIT")
-                } label: {
-                    Text(verbatim: "License")
-                }
+            } header: {
+                Text("About")
             } footer: {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(verbatim: "本项目为独立、非官方的开源客户端，与 nhentai 及其运营方不存在隶属、合作或背书关系，仅供学习、研究与个人使用。第三方内容及其版权归相应权利人所有，本项目不拥有或提供这些内容，也不参与用户、平台与版权方之间的争议。使用者应自行确认访问权限，遵守所在国家或地区的法律法规、年龄限制及平台服务条款，尊重知识产权，不得用于违法或侵权活动。软件按原样提供，不作任何保证；责任限制以 MIT 许可证及适用法律为准。本声明不免除任何依法应承担的责任。")
