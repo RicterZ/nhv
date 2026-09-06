@@ -10,6 +10,8 @@ struct MainTabView: View {
                 .tabItem { Label("Home", systemImage: "books.vertical") }
             NavigationStack { SearchView() }
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
+            NavigationStack { FavoritesView() }
+                .tabItem { Label("Favorites", systemImage: "heart") }
             NavigationStack { ProfileView(user: account.user) }
                 .tabItem { Label("Me", systemImage: "person.crop.circle") }
         }

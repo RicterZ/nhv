@@ -12,11 +12,6 @@ struct ProfileView: View {
                 if !user.about.isEmpty { Text(verbatim: user.about) }
             }
             Section {
-                NavigationLink { FavoritesView() } label: {
-                    Label("Favorites", systemImage: "heart")
-                }
-            }
-            Section {
                 Button("Sign Out", role: .destructive) { session.signOut() }
                 if let error = session.error { InlineErrorView(error: error) }
             }

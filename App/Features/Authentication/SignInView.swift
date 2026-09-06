@@ -17,20 +17,24 @@ struct SignInView: View {
                         .onSubmit(signIn)
                         .disabled(session.isBusy)
                         .accessibilityIdentifier("signIn.apiKey")
+                }
+
+                Section {
                     Button(action: signIn) {
-                        if session.isBusy {
-                            ProgressView("Signing in…")
-                        } else {
-                            Text("Sign In")
+                        Group {
+                            if session.isBusy {
+                                ProgressView("Signing in…")
+                            } else {
+                                Text("Sign In")
+                            }
                         }
+                        .frame(maxWidth: .infinity, minHeight: 44)
                     }
+                    .buttonStyle(.borderless)
                     .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || session.isBusy)
                     .accessibilityIdentifier("signIn.submit")
-                } header: {
-                    Text("Your personal reader")
-                } footer: {
-                    Text("Create an API key in your account settings. Your key is stored securely on this device.")
                 }
+                .listRowBackground(Color.clear)
 
                 if let error = session.error {
                     Section { InlineErrorView(error: error) }
