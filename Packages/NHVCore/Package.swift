@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "NHV",
+    name: "NHVCore",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "NHVCore", targets: ["NHVCore"])],
     targets: [

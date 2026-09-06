@@ -11,6 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A00000000000000000000018 /* NHVCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = NHVCore; path = Packages/NHVCore; sourceTree = "<group>"; };
 		A00000000000000000000007 /* NHV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NHV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -35,6 +36,7 @@
 			children = (
 				A00000000000000000000006 /* App */,
 				A00000000000000000000004 /* Products */,
+				A00000000000000000000018 /* NHVCore */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,7 +94,7 @@
 			);
 			mainGroup = A00000000000000000000003;
 			packageReferences = (
-				A00000000000000000000015 /* XCLocalSwiftPackageReference "." */,
+				A00000000000000000000015 /* XCLocalSwiftPackageReference "Packages/NHVCore" */,
 			);
 			productRefGroup = A00000000000000000000004 /* Products */;
 			projectDirPath = "";
@@ -156,6 +158,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X5767KXUH8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = NHV;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
@@ -177,6 +180,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X5767KXUH8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = NHV;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
@@ -217,16 +221,16 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A00000000000000000000015 /* XCLocalSwiftPackageReference "." */ = {
+		A00000000000000000000015 /* XCLocalSwiftPackageReference "Packages/NHVCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = .;
+			relativePath = Packages/NHVCore;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		A00000000000000000000016 /* NHVCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A00000000000000000000015 /* XCLocalSwiftPackageReference "." */;
+			package = A00000000000000000000015 /* XCLocalSwiftPackageReference "Packages/NHVCore" */;
 			productName = NHVCore;
 		};
 /* End XCSwiftPackageProductDependency section */
