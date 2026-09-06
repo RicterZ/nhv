@@ -123,7 +123,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在登录…"
+            "value": "登录中..."
           }
         },
         "ja": {
