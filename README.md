@@ -8,11 +8,10 @@ An unofficial nhentai iOS client written in Swift for browsing, searching, and m
 - Latest galleries, automatic pagination, and cover preloading in display order.
 - Search and sorting with syntax suggestions, exclusions, removable search terms, and local search history.
 - Gallery details, covers, page previews, and interactive tags for browsing related works.
+- Fullscreen reading from any page, tap or swipe navigation, pinch zoom and reset, next-two-page preloading, and automatic retries.
 - Favorites browsing, with actions to add or remove favorites.
 - Dark and light themes; English, Simplified Chinese, and Japanese; optional language filtering for Home and Search.
 - Current account information and local image cache cleanup.
-
-A full page reader is not implemented yet.
 
 ## Build and install
 

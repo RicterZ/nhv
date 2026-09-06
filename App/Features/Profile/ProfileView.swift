@@ -40,18 +40,18 @@ struct ProfileView: View {
             Section {
                 Button(role: .destructive) {
                     Task {
-                        await media.thumbnails.clearCache()
+                        await media.clearImageCache()
                         showsCacheCleared = true
                     }
                 } label: {
                     HStack {
                         Label("Clear Cache", systemImage: "trash")
                         Spacer()
-                        if media.thumbnails.isClearingCache { ProgressView() }
+                        if media.isClearingCache { ProgressView() }
                     }
                     .foregroundStyle(.red)
                 }
-                .disabled(media.thumbnails.isClearingCache)
+                .disabled(media.isClearingCache)
             }
             Section {
                 LabeledContent("Version", value: appVersion)

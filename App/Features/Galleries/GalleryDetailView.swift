@@ -12,6 +12,7 @@ struct GalleryDetailView: View {
     @State private var error: (any Error)?
     @State private var favoriteError: (any Error)?
     @State private var isLoading = false
+    @State private var readerDestination: ReaderDestination?
 
     var body: some View {
         ScrollView {
@@ -109,16 +110,22 @@ struct GalleryDetailView: View {
                     if !gallery.pages.isEmpty {
                         Text("Pages").font(.headline)
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
-                            ForEach(gallery.pages) { page in
-                                GalleryCover(url: media.thumbnail(page.thumbnail))
-                                    .aspectRatio(0.7, contentMode: .fit)
-                                    .overlay(alignment: .bottomTrailing) {
-                                        Text(page.number, format: .number)
-                                            .foregroundStyle(.white)
-                                            .font(.caption2.monospacedDigit())
-                                            .padding(4)
-                                            .background(.black.opacity(0.8))
-                                    }
+                            ForEach(Array(gallery.pages.enumerated()), id: \.element.id) { index, page in
+                                Button {
+                                    readerDestination = ReaderDestination(pages: gallery.pages, initialIndex: index)
+                                } label: {
+                                    GalleryCover(url: media.thumbnail(page.thumbnail))
+                                        .aspectRatio(0.7, contentMode: .fit)
+                                        .overlay(alignment: .bottomTrailing) {
+                                            Text(page.number, format: .number)
+                                                .foregroundStyle(.white)
+                                                .font(.caption2.monospacedDigit())
+                                                .padding(4)
+                                                .background(.black.opacity(0.8))
+                                        }
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(Text("Open page \(index + 1)"))
                             }
                         }
                     }
@@ -140,6 +147,9 @@ struct GalleryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }
         .task { if gallery == nil { await load() } }
+        .fullScreenCover(item: $readerDestination) { destination in
+            ReaderView(destination: destination, api: api)
+        }
     }
 
     private func load() async {

@@ -1,0 +1,100 @@
+import NHVCore
+import SwiftUI
+
+struct ReaderDestination: Identifiable {
+    let id = UUID()
+    let pages: [GalleryPage]
+    let initialIndex: Int
+}
+
+struct ReaderView: View {
+    let pages: [GalleryPage]
+    let api: NHentaiAPI
+    @Environment(MediaStore.self) private var media
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var index: Int
+    @State private var isZoomed = false
+    @State private var resetID = 0
+
+    init(destination: ReaderDestination, api: NHentaiAPI) {
+        pages = destination.pages
+        self.api = api
+        _index = State(initialValue: destination.initialIndex)
+    }
+
+    private var urls: [URL?] { pages.map { media.image($0.path) } }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            let url = urls.indices.contains(index) ? urls[index] : nil
+            ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed, turnPage: turnPage)
+                .ignoresSafeArea()
+            if url.flatMap({ media.reader.images[$0] }) == nil {
+                ProgressView().tint(.white).allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            Text("\(index + 1) / \(pages.count)")
+                .font(.subheadline.monospacedDigit())
+                .padding(10)
+                .background(.black.opacity(0.65), in: Capsule())
+                .padding(16)
+                .accessibilityLabel(Text("Page \(index + 1) of \(pages.count)"))
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark").frame(width: 44, height: 44)
+                    .background(.black.opacity(0.65), in: Circle())
+            }
+            .accessibilityLabel(Text("Close reader"))
+            .padding(16)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if isZoomed {
+                Button {
+                    resetID += 1
+                } label: {
+                    Image(systemName: "arrow.down.right.and.arrow.up.left").frame(width: 44, height: 44)
+                        .background(.black.opacity(0.65), in: Circle())
+                }
+                .accessibilityLabel(Text("Reset zoom"))
+                .padding(16)
+            }
+        }
+        .foregroundStyle(.white)
+        .buttonStyle(.plain)
+        .preferredColorScheme(.dark)
+        .statusBarHidden()
+        .persistentSystemOverlays(.hidden)
+        .accessibilityAction(named: Text("Next page")) { turnPage(1) }
+        .accessibilityAction(named: Text("Previous page")) { turnPage(-1) }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else {
+                media.reader.cancel()
+                return
+            }
+            while media.resolver == nil && !Task.isCancelled {
+                await media.prepare(api: api)
+                if media.resolver == nil {
+                    do { try await Task.sleep(for: .seconds(5)) } catch { return }
+                }
+            }
+            guard !Task.isCancelled else { return }
+            media.reader.focus(on: index, urls: urls)
+        }
+        .onChange(of: index) { _, _ in media.reader.focus(on: index, urls: urls) }
+        .onDisappear { media.reader.cancel() }
+    }
+
+    private func turnPage(_ delta: Int) {
+        let next = index + delta
+        guard pages.indices.contains(next) else { return }
+        isZoomed = false
+        resetID += 1
+        index = next
+    }
+}
