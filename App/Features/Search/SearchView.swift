@@ -8,6 +8,7 @@ struct SearchView: View {
     @State private var terms: [String] = []
     @State private var sort = GallerySort.date
     @State private var isSearchPresented = false
+    @State private var completionRequest: SearchCompletionRequest?
 
     private var query: String { terms.joined(separator: " ") }
 
@@ -16,7 +17,9 @@ struct SearchView: View {
             if isSearchPresented && !SearchSyntax.suggestions(for: input).isEmpty {
                 GalleryScrollView(header: { filters }) {
                     SearchSyntaxSuggestions(input: input) { syntax in
-                        input = syntax.applying(to: input)
+                        let completion = syntax.completion(in: input)
+                        input = completion.text
+                        completionRequest = SearchCompletionRequest(completion: completion)
                     }
                 }
             } else if terms.isEmpty {
@@ -34,12 +37,14 @@ struct SearchView: View {
         .background(Color.black)
         .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer, prompt: "Search galleries")
+        .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
+        .modifier(SearchCompletionSelection(request: completionRequest))
         .onSubmit(of: .search) {
             for term in SearchTerms.split(input) where !terms.contains(term) {
                 terms.append(term)
             }
             input = ""
+            completionRequest = nil
             isSearchPresented = false
         }
     }
