@@ -70,7 +70,7 @@ struct SignInView: View {
                                 .font(.footnote.weight(.medium))
                                 .tracking(0.5)
                                 .foregroundStyle(.white.opacity(0.55))
-                                .offset(y: 36)
+                                .offset(y: 52)
                                 .opacity(isAuthenticating ? 1 : 0)
                                 .accessibilityHidden(!isAuthenticating)
                         }
