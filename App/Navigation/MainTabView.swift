@@ -22,7 +22,7 @@ struct MainTabView: View {
         .environment(media)
         .environment(favorites)
         .environment(languages)
-        .tint(Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255))
+        .tint(theme.accentColor)
         .preferredColorScheme(theme.colorScheme)
         .onDisappear { media.thumbnails.cancel() }
     }

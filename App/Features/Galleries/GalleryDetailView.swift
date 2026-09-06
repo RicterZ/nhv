@@ -23,7 +23,6 @@ struct GalleryDetailView: View {
                     }
                     GalleryCover(url: media.thumbnail(gallery.cover.path))
                         .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
-                        .frame(maxWidth: 280)
                         .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 8) {
