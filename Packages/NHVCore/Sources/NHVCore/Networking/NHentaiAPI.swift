@@ -13,7 +13,7 @@ public struct NHentaiAPI: Sendable {
         try await client.send(["cdn"], authenticated: false)
     }
 
-    public func galleries(page: Int = 1, perPage: Int = 25) async throws -> PaginatedResponse<GallerySummary> {
+    public func galleries(page: Int = 1, perPage: Int? = nil) async throws -> PaginatedResponse<GallerySummary> {
         try await client.send(["galleries"], query: pagination(page, perPage: perPage))
     }
 
@@ -63,7 +63,7 @@ public struct NHentaiAPI: Sendable {
         return try await client.send(["tags", "search"], method: "POST", body: body)
     }
 
-    public func galleries(tagID: Int, sort: GallerySort = .date, page: Int = 1, perPage: Int = 25) async throws -> PaginatedResponse<GallerySummary> {
+    public func galleries(tagID: Int, sort: GallerySort = .date, page: Int = 1, perPage: Int? = nil) async throws -> PaginatedResponse<GallerySummary> {
         try validateID(tagID)
         return try await client.send(["galleries", "tagged"], query: pagination(page, perPage: perPage) + [
             .init(name: "tag_id", value: String(tagID)), .init(name: "sort", value: sort.rawValue)
