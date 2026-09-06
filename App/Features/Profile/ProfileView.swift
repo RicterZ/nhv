@@ -14,24 +14,31 @@ struct ProfileView: View {
         List {
             Section("Account") {
                 LabeledContent("Username", value: user.username)
-                if !user.about.isEmpty { Text(verbatim: user.about) }
+                Button("Sign Out", role: .destructive) { session.signOut() }
+                if let error = session.error { InlineErrorView(error: error) }
             }
             Section {
                 Picker("Appearance", selection: $theme) {
                     Text("Dark").tag(AppTheme.dark)
                     Text("Light").tag(AppTheme.light)
                 }
+                .tint(theme.accentColor)
+                .id("appearance-\(theme.rawValue)")
                 Picker("Language", selection: $language.selection) {
                     ForEach(AppLanguage.allCases, id: \.self) { option in
                         Text(verbatim: option.definition.nativeName).tag(option)
                     }
                 }
+                .tint(theme.accentColor)
+                .id("language-\(theme.rawValue)")
                 Toggle("Filter by App Language", isOn: $language.filterGalleries)
+            } header: {
+                Text("Settings")
             } footer: {
                 Text("Show only galleries in the selected language on Home and Search.")
             }
             Section {
-                Button {
+                Button(role: .destructive) {
                     Task {
                         await media.thumbnails.clearCache()
                         showsCacheCleared = true
@@ -45,13 +52,19 @@ struct ProfileView: View {
                 }
                 .disabled(media.thumbnails.isClearingCache)
             }
-            Section {
-                Button("Sign Out", role: .destructive) { session.signOut() }
-                if let error = session.error { InlineErrorView(error: error) }
-            } header: {
-                Color.clear
-                    .frame(height: 16)
-                    .accessibilityHidden(true)
+            Section("About") {
+                LabeledContent("Version", value: appVersion)
+                Link(destination: URL(string: "https://github.com/RicterZ/nhv")!) {
+                    HStack {
+                        Text(verbatim: "GitHub")
+                        Spacer()
+                        Text(verbatim: "RicterZ/nhv")
+                            .foregroundStyle(theme.accentColor)
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.primary)
+                }
             }
         }
         .listSectionSpacing(12)
@@ -59,5 +72,9 @@ struct ProfileView: View {
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
     }
 }

@@ -1,6 +1,22 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "About": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "About" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关于" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "このアプリについて" } }
+      }
+    },
+    "Version": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Version" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "版本" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "バージョン" } }
+      }
+    },
     "Settings": {
       "extractionState": "manual",
       "localizations": {
