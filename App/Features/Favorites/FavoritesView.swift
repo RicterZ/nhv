@@ -5,12 +5,16 @@ struct FavoritesView: View {
     let api: NHentaiAPI
     @State private var input = ""
     @State private var query = ""
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         GalleryCollectionView(api: api, query: .favorites(query))
             .navigationTitle("Favorites")
-            .searchable(text: $input, prompt: "Search favorites")
-            .onSubmit(of: .search) { query = input.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomSearchField(text: $input, isFocused: $isSearchFocused, prompt: "Search favorites") {
+                    query = input.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
             .onChange(of: input) { _, value in if value.isEmpty { query = "" } }
     }
 }

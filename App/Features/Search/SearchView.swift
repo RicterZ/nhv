@@ -7,6 +7,7 @@ struct SearchView: View {
     @State private var input = ""
     @State private var terms: [String] = []
     @State private var sort = GallerySort.date
+    @FocusState private var isSearchPresented: Bool
 
     private var query: String { terms.joined(separator: " ") }
 
@@ -19,19 +20,24 @@ struct SearchView: View {
                     }
                 }
 
-                if terms.isEmpty {
+                if isSearchPresented && !SearchSyntax.suggestions(for: input).isEmpty {
+                    SearchSyntaxSuggestions(input: input) { syntax in
+                        input = syntax.applying(to: input)
+                    }
+                } else if terms.isEmpty {
                     ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
                 } else {
                     GalleryCollectionView(api: api, query: language.applyingFilter(to: .search(query, sort)))
                 }
             }
         }
-        .searchable(text: $input, prompt: "Search galleries")
-        .onSubmit(of: .search) {
-            for term in SearchTerms.split(input) where !terms.contains(term) {
-                terms.append(term)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            BottomSearchField(text: $input, isFocused: $isSearchPresented, prompt: "Search galleries") {
+                for term in SearchTerms.split(input) where !terms.contains(term) {
+                    terms.append(term)
+                }
+                input = ""
             }
-            input = ""
         }
     }
 }
