@@ -13,6 +13,7 @@ struct GallerySortPicker: View {
                 Label("Sort", systemImage: "line.3.horizontal.decrease")
                     .labelStyle(.iconOnly)
             }
+            .buttonStyle(.plain)
             .accessibilityLabel(Text("Sort"))
         } else {
             options.pickerStyle(.menu)

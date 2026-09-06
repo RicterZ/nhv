@@ -16,13 +16,20 @@ struct SearchView: View {
             }
         }
         .navigationTitle("Search")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(text: $input, prompt: "Search galleries")
         .onSubmit(of: .search) { query = input.trimmingCharacters(in: .whitespacesAndNewlines) }
         .onChange(of: input) { _, value in if value.isEmpty { query = "" } }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                GallerySortPicker(selection: $sort, iconOnly: true)
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    GallerySortPicker(selection: $sort, iconOnly: true)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    GallerySortPicker(selection: $sort, iconOnly: true)
+                }
             }
         }
     }
