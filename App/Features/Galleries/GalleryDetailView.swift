@@ -40,24 +40,31 @@ struct GalleryDetailView: View {
                     HStack {
                         Label("\(gallery.numPages) pages", systemImage: "book")
                         Spacer()
-                        Label((favorites.states[id]?.count ?? gallery.numFavorites).formatted(), systemImage: "heart")
+                        Button {
+                            Task { await toggleFavorite() }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: favorites.states[id]?.favorited == true ? "heart.fill" : "heart")
+                                    .foregroundStyle(favorites.states[id]?.favorited == true
+                                        ? Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255)
+                                        : Color.secondary)
+                                Text((favorites.states[id]?.count ?? gallery.numFavorites).formatted())
+                                    .monospacedDigit()
+                            }
+                            .opacity(favorites.updating.contains(id) ? 0.3 : 1)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                            .overlay {
+                                if favorites.updating.contains(id) { ProgressView() }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(favorites.updating.contains(id) || favorites.states[id] == nil)
+                        .accessibilityLabel(favorites.states[id]?.favorited == true ? Text("Unfavorite") : Text("Favorite"))
+                        .accessibilityValue((favorites.states[id]?.count ?? gallery.numFavorites).formatted())
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-
-                    Button {
-                        Task { await toggleFavorite() }
-                    } label: {
-                        if favorites.updating.contains(id) {
-                            ProgressView()
-                        } else if favorites.states[id]?.favorited == true {
-                            Label("Unfavorite", systemImage: "heart.fill")
-                        } else {
-                            Label("Favorite", systemImage: "heart")
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(favorites.updating.contains(id) || favorites.states[id] == nil)
 
                     if let favoriteError { InlineErrorView(error: favoriteError) }
                     if let error { InlineErrorView(error: error) }
@@ -70,29 +77,30 @@ struct GalleryDetailView: View {
                         LabeledContent("Scanlator", value: gallery.scanlator)
                     }
 
-                    ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
-                        FlowLayout {
-                            Text(tagTypeTitle(type))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .padding(.vertical, 5)
-                                .padding(.trailing, 4)
-                            ForEach(gallery.tags.filter { $0.type == type }) { tag in
-                                NavigationLink {
-                                    TagGalleriesView(api: api, tag: tag)
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Text(verbatim: tag.name)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                        Text(tag.count.formatted(.number.notation(.compactName)))
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .fixedSize()
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
+                            FlowLayout {
+                                Text(tagTypeTitle(type))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.trailing, 4)
+                                ForEach(gallery.tags.filter { $0.type == type }) { tag in
+                                    NavigationLink {
+                                        TagGalleriesView(api: api, tag: tag)
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Text(verbatim: tag.name)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                            Text(tag.count.formatted(.number.notation(.compactName)))
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                                .fixedSize()
+                                        }
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 5)
+                                        .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                                     }
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 5)
-                                    .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                                 }
                             }
                         }

@@ -21,8 +21,14 @@ final class FavoriteStore {
     func set(id: Int, favorited: Bool, api: NHentaiAPI) async throws {
         guard updating.insert(id).inserted else { return }
         defer { updating.remove(id) }
+        let previous = states[id]
         let response = try await api.setFavorite(id: id, favorited: favorited)
-        states[id] = State(favorited: response.favorited, count: response.numFavorites)
+        let fallbackCount = previous.flatMap { previous in
+            previous.count.map { count in
+                max(0, count + (previous.favorited == response.favorited ? 0 : (response.favorited ? 1 : -1)))
+            }
+        }
+        states[id] = State(favorited: response.favorited, count: response.numFavorites ?? fallbackCount)
         revision += 1
     }
 }

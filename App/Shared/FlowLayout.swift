@@ -27,10 +27,19 @@ struct FlowLayout: Layout {
         var x: CGFloat = 0
         var y: CGFloat = 0
         var rowHeight: CGFloat = 0
+        var rowStart = 0
+
+        func centerRow() {
+            for index in rowStart..<frames.count {
+                frames[index].origin.y += (rowHeight - frames[index].height) / 2
+            }
+        }
 
         for (index, subview) in subviews.enumerated() {
             let size = subview.sizeThatFits(ProposedViewSize(width: min(width, naturalSizes[index].width), height: nil))
             if x > 0, x + size.width > width {
+                centerRow()
+                rowStart = frames.count
                 x = 0
                 y += rowHeight + spacing
                 rowHeight = 0
@@ -39,6 +48,7 @@ struct FlowLayout: Layout {
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
         }
+        centerRow()
         return (CGSize(width: width, height: y + rowHeight), frames)
     }
 }
