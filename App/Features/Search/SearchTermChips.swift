@@ -1,11 +1,14 @@
 import SwiftUI
+import NHVCore
 
 struct SearchTermChips: View {
     let terms: [String]
+    @Binding var sort: GallerySort
     let remove: (String) -> Void
 
     var body: some View {
         FlowLayout(spacing: 6) {
+            GallerySortPicker(selection: $sort, usesChipStyle: true)
             ForEach(terms, id: \.self) { term in
                 Button {
                     remove(term)
@@ -16,11 +19,7 @@ struct SearchTermChips: View {
                         Image(systemName: "xmark")
                             .font(.caption2.weight(.semibold))
                     }
-                    .font(.subheadline)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
-                    .contentShape(Rectangle())
+                    .modifier(GalleryFilterChipStyle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("Remove filter: \(term)"))

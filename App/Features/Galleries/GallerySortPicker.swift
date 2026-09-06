@@ -3,19 +3,38 @@ import NHVCore
 
 struct GallerySortPicker: View {
     @Binding var selection: GallerySort
+    var usesChipStyle = false
 
     var body: some View {
         Menu {
             options.pickerStyle(.inline)
         } label: {
-            Label("Sort", systemImage: "line.3.horizontal.decrease")
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+            if usesChipStyle {
+                HStack(spacing: 8) {
+                    Image(systemName: "line.3.horizontal.decrease")
+                    selectionTitle
+                }
+                .modifier(GalleryFilterChipStyle())
+            } else {
+                Label("Sort", systemImage: "line.3.horizontal.decrease")
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Sort"))
+    }
+
+    private var selectionTitle: Text {
+        switch selection {
+        case .date: Text("Newest")
+        case .popular: Text("Popular")
+        case .today: Text("Today")
+        case .week: Text("This Week")
+        case .month: Text("This Month")
+        }
     }
 
     private var options: some View {

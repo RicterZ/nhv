@@ -12,33 +12,31 @@ struct SearchView: View {
     private var query: String { terms.joined(separator: " ") }
 
     var body: some View {
-        GalleryBrowsePage(title: Text("Search"), sort: $sort) {
-            VStack(spacing: 0) {
-                GallerySearchField(text: $input, isEditing: $isSearchPresented, prompt: "Search galleries") {
-                    for term in SearchTerms.split(input) where !terms.contains(term) {
-                        terms.append(term)
-                    }
-                    input = ""
-                }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
-
-                if !terms.isEmpty {
-                    SearchTermChips(terms: terms) { term in
-                        terms.removeAll { $0 == term }
-                    }
-                }
-
-                if isSearchPresented && !SearchSyntax.suggestions(for: input).isEmpty {
-                    SearchSyntaxSuggestions(input: input) { syntax in
-                        input = syntax.applying(to: input)
-                    }
-                } else if terms.isEmpty {
-                    ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
-                } else {
-                    GalleryCollectionView(api: api, query: language.applyingFilter(to: .search(query, sort)))
-                }
+        VStack(spacing: 0) {
+            SearchTermChips(terms: terms, sort: $sort) { term in
+                terms.removeAll { $0 == term }
             }
+
+            if isSearchPresented && (terms.isEmpty || !input.isEmpty) && !SearchSyntax.suggestions(for: input).isEmpty {
+                SearchSyntaxSuggestions(input: input) { syntax in
+                    input = syntax.applying(to: input)
+                }
+            } else if terms.isEmpty {
+                ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
+            } else {
+                GalleryCollectionView(api: api, query: language.applyingFilter(to: .search(query, sort)))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
+        .navigationTitle("Search")
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $input, isPresented: $isSearchPresented, prompt: "Search galleries")
+        .onSubmit(of: .search) {
+            for term in SearchTerms.split(input) where !terms.contains(term) {
+                terms.append(term)
+            }
+            input = ""
         }
     }
 }
