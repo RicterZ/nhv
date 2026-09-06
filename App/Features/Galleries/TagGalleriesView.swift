@@ -7,8 +7,8 @@ struct TagGalleriesView: View {
     @State private var sort = GallerySort.date
 
     var body: some View {
-        GalleryCollectionView(api: api, query: .tag(tag.id, sort))
-            .navigationTitle(tag.name)
-            .toolbar { GallerySortPicker(selection: $sort) }
+        GalleryBrowsePage(title: Text(verbatim: tag.name), sort: $sort) {
+            GalleryCollectionView(api: api, query: .tag(tag.id, sort))
+        }
     }
 }

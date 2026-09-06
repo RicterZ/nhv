@@ -3,21 +3,19 @@ import NHVCore
 
 struct GallerySortPicker: View {
     @Binding var selection: GallerySort
-    var iconOnly = false
 
     var body: some View {
-        if iconOnly {
-            Menu {
-                options.pickerStyle(.inline)
-            } label: {
-                Label("Sort", systemImage: "line.3.horizontal.decrease")
-                    .labelStyle(.iconOnly)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Sort"))
-        } else {
-            options.pickerStyle(.menu)
+        Menu {
+            options.pickerStyle(.inline)
+        } label: {
+            Label("Sort", systemImage: "line.3.horizontal.decrease")
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Sort"))
     }
 
     private var options: some View {
