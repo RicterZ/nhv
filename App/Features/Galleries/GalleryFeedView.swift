@@ -121,7 +121,7 @@ private struct GalleryCard: View {
         VStack(alignment: .leading, spacing: 10) {
             GalleryCover(url: url)
                 .frame(maxWidth: .infinity)
-                .aspectRatio(0.70, contentMode: .fit)
+                .frame(height: 240)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(alignment: .bottomTrailing) {
                     if gallery.numPages > 0 {

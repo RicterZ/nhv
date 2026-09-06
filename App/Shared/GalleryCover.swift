@@ -5,21 +5,22 @@ struct GalleryCover: View {
     @Environment(MediaStore.self) private var media
 
     var body: some View {
-        Group {
-            if let url, let image = media.thumbnails.image(for: url) {
-                Image(uiImage: image).resizable().scaledToFit()
-            } else if let url, media.thumbnails.failures.contains(url) {
-                VStack(spacing: 8) {
-                    Image(systemName: "photo.badge.exclamationmark")
-                    Text("Image unavailable")
-                        .font(.caption)
+        GeometryReader { geometry in
+            Group {
+                if let url, let image = media.thumbnails.image(for: url) {
+                    Image(uiImage: image).resizable().scaledToFit()
+                } else if let url, media.thumbnails.failures.contains(url) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo.badge.exclamationmark")
+                        Text("Image unavailable")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
+                } else {
+                    ProgressView()
                 }
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
         }
         .background(Color.white.opacity(0.04))
         .contextMenu {
