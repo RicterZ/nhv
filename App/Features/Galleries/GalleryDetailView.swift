@@ -71,26 +71,28 @@ struct GalleryDetailView: View {
                     }
 
                     ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(tagTypeTitle(type)).font(.subheadline.weight(.semibold))
-                            FlowLayout {
-                                ForEach(gallery.tags.filter { $0.type == type }) { tag in
-                                    NavigationLink {
-                                        TagGalleriesView(api: api, tag: tag)
-                                    } label: {
-                                        HStack(spacing: 4) {
-                                            Text(verbatim: tag.name)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                            Text(tag.count.formatted(.number.notation(.compactName)))
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                                .fixedSize()
-                                        }
-                                        .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 5)
-                                        .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                        FlowLayout {
+                            Text(tagTypeTitle(type))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 5)
+                                .padding(.trailing, 4)
+                            ForEach(gallery.tags.filter { $0.type == type }) { tag in
+                                NavigationLink {
+                                    TagGalleriesView(api: api, tag: tag)
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text(verbatim: tag.name)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Text(tag.count.formatted(.number.notation(.compactName)))
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .fixedSize()
                                     }
+                                    .font(.caption)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                                    .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                                 }
                             }
                         }
