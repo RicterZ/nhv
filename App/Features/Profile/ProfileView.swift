@@ -3,6 +3,8 @@ import NHVCore
 
 struct ProfileView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(MediaStore.self) private var media
+    @State private var showsCacheCleared = false
     let user: CurrentUser
 
     var body: some View {
@@ -12,10 +14,28 @@ struct ProfileView: View {
                 if !user.about.isEmpty { Text(verbatim: user.about) }
             }
             Section {
+                Button {
+                    Task {
+                        await media.thumbnails.clearCache()
+                        showsCacheCleared = true
+                    }
+                } label: {
+                    HStack {
+                        Label("Clear Cache", systemImage: "trash")
+                        Spacer()
+                        if media.thumbnails.isClearingCache { ProgressView() }
+                    }
+                }
+                .disabled(media.thumbnails.isClearingCache)
+            }
+            Section {
                 Button("Sign Out", role: .destructive) { session.signOut() }
                 if let error = session.error { InlineErrorView(error: error) }
             }
         }
         .navigationTitle("Me")
+        .alert("Cache Cleared", isPresented: $showsCacheCleared) {
+            Button("OK", role: .cancel) {}
+        }
     }
 }

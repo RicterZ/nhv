@@ -93,6 +93,7 @@ private struct GalleryFeedView: View {
         }
         .task {
             await media.prepare(api: api)
+            media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail) })
             if case .favorites = query, favoriteRevision != favorites.revision {
                 await feed.refresh()
             } else {

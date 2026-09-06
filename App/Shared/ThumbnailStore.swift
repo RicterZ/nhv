@@ -9,12 +9,14 @@ import NHVCore
 final class ThumbnailStore {
     private(set) var revision = 0
     private(set) var failures: Set<URL> = []
+    private(set) var isClearingCache = false
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
     @ObservationIgnored private var queue = OrderedWorkQueue<URL>(concurrency: 4)
     @ObservationIgnored private var active: [URL: Task<Void, Never>] = [:]
     @ObservationIgnored private var resumeTask: Task<Void, Never>?
     @ObservationIgnored private var pausedUntil: Date?
     @ObservationIgnored private let session: URLSession
+    @ObservationIgnored private let responseCache: URLCache
 
     init() {
         cache.totalCostLimit = 48 * 1024 * 1024
@@ -24,7 +26,8 @@ final class ThumbnailStore {
         config.httpMaximumConnectionsPerHost = 4
         config.timeoutIntervalForRequest = 25
         config.timeoutIntervalForResource = 40
-        config.urlCache = URLCache(memoryCapacity: 8 * 1024 * 1024, diskCapacity: 96 * 1024 * 1024)
+        responseCache = URLCache(memoryCapacity: 8 * 1024 * 1024, diskCapacity: 96 * 1024 * 1024)
+        config.urlCache = responseCache
         session = URLSession(configuration: config)
     }
 
@@ -34,6 +37,7 @@ final class ThumbnailStore {
     }
 
     func enqueue(_ urls: [URL]) {
+        guard !isClearingCache else { return }
         queue.enqueue(urls.filter { cache.object(forKey: $0 as NSURL) == nil && !failures.contains($0) })
         pump()
     }
@@ -49,6 +53,20 @@ final class ThumbnailStore {
         active.values.forEach { $0.cancel() }
         active.removeAll()
         queue.removeAll()
+    }
+
+    func clearCache() async {
+        guard !isClearingCache else { return }
+        isClearingCache = true
+        let downloads = Array(active.values)
+        cancel()
+        // Wait for cancelled transfers/decoders before removing their cached responses.
+        for download in downloads { await download.value }
+        cache.removeAllObjects()
+        responseCache.removeAllCachedResponses()
+        failures.removeAll()
+        revision += 1
+        isClearingCache = false
     }
 
     private func pump() {
