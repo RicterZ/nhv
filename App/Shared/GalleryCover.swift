@@ -2,17 +2,26 @@ import SwiftUI
 
 struct GalleryCover: View {
     let url: URL?
+    var fillsStandardCoverWidth = false
     @Environment(MediaStore.self) private var media
 
     var body: some View {
         GeometryReader { geometry in
             Group {
                 if let url, let image = media.thumbnails.image(for: url) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .background(Color.white)
+                    let ratio = image.size.width / max(1, image.size.height)
+                    Group {
+                        if fillsStandardCoverWidth && (480.0 / 720.0...520.0 / 680.0).contains(ratio) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .frame(width: geometry.size.width, height: geometry.size.width / ratio)
+                        } else {
+                            Image(uiImage: image).resizable().scaledToFit()
+                        }
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
+                    .background(Color.white)
+                    .clipped()
                 } else if let url, media.thumbnails.failures.contains(url) {
                     VStack(spacing: 8) {
                         Image(systemName: "photo.badge.exclamationmark")

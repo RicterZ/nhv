@@ -42,6 +42,11 @@ private struct GalleryFeedView: View {
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
 
+    private var showsFavoriteCount: Bool {
+        if case .favorites = query { return false }
+        return true
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 24) {
@@ -58,12 +63,7 @@ private struct GalleryFeedView: View {
                 if !feed.items.isEmpty {
                     LazyVGrid(columns: columns, spacing: 24) {
                         ForEach(feed.items) { gallery in
-                            NavigationLink {
-                                GalleryDetailView(api: api, id: gallery.id)
-                            } label: {
-                                GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail))
-                            }
-                            .buttonStyle(.plain)
+                            GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail), api: api, showsFavoriteCount: showsFavoriteCount)
                         }
                     }
                 }
@@ -116,36 +116,45 @@ private struct GalleryFeedView: View {
 private struct GalleryCard: View {
     let gallery: GallerySummary
     let url: URL?
-    @Environment(FavoriteStore.self) private var favorites
+    let api: NHentaiAPI
+    let showsFavoriteCount: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            GalleryCover(url: url)
-                .frame(maxWidth: .infinity)
-                .frame(height: 240)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(alignment: .bottomTrailing) {
+            NavigationLink {
+                GalleryDetailView(api: api, id: gallery.id)
+            } label: {
+                GalleryCover(url: url, fillsStandardCoverWidth: true)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 240)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .overlay(alignment: .bottom) {
+                HStack(alignment: .bottom, spacing: 4) {
+                    GalleryCardFavoriteButton(gallery: gallery, api: api, showsCount: showsFavoriteCount)
+                    Spacer(minLength: 0)
                     if gallery.numPages > 0 {
                         Text("\(gallery.numPages) pages")
                             .font(.caption2.monospacedDigit())
                             .padding(.horizontal, 7)
                             .padding(.vertical, 4)
                             .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 4))
-                            .padding(6)
+                            .allowsHitTesting(false)
                     }
                 }
-
-            GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
-                .font(.subheadline.weight(.medium))
-                .lineLimit(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Label {
-                Text(favorites.states[gallery.id]?.count ?? gallery.numFavorites, format: .number)
-            } icon: {
-                Image(systemName: favorites.states[gallery.id]?.favorited == true ? "heart.fill" : "heart")
+                .padding(6)
             }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+
+            NavigationLink {
+                GalleryDetailView(api: api, id: gallery.id)
+            } label: {
+                GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
         }
         .foregroundStyle(.white)
     }

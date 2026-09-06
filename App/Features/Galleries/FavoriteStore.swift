@@ -21,6 +21,21 @@ final class FavoriteStore {
     func set(id: Int, favorited: Bool, api: NHentaiAPI) async throws {
         guard updating.insert(id).inserted else { return }
         defer { updating.remove(id) }
+        try await write(id: id, favorited: favorited, api: api)
+    }
+
+    func toggle(id: Int, fallbackCount: Int, api: NHentaiAPI) async throws {
+        guard updating.insert(id).inserted else { return }
+        defer { updating.remove(id) }
+        if states[id] == nil {
+            let current = try await api.favorite(id: id)
+            states[id] = State(favorited: current.favorited, count: current.numFavorites ?? fallbackCount)
+        }
+        guard let current = states[id] else { return }
+        try await write(id: id, favorited: !current.favorited, api: api)
+    }
+
+    private func write(id: Int, favorited: Bool, api: NHentaiAPI) async throws {
         let previous = states[id]
         let response = try await api.setFavorite(id: id, favorited: favorited)
         let fallbackCount = previous.flatMap { previous in
