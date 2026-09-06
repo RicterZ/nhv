@@ -3,9 +3,12 @@ import NHVCore
 
 @main
 struct NHVApp: App {
+    @State private var session = SessionStore(credentials: KeychainCredentialStore())
+
     var body: some Scene {
         WindowGroup {
-            ContentUnavailableView("NHV", systemImage: "book.closed", description: Text("个人阅读客户端"))
+            RootView()
+                .environment(session)
         }
     }
 }
