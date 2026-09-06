@@ -54,6 +54,7 @@ struct SignInView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let logoSpace = max(0, geometry.size.height - 240)
             ZStack {
                 Color.black.ignoresSafeArea()
 
@@ -62,7 +63,7 @@ struct SignInView: View {
                     Image("NHentaiLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: min(240, geometry.size.width * 0.55), height: min(120, geometry.size.height * 0.22))
+                        .frame(width: min(240, geometry.size.width * 0.55), height: min(120, logoSpace * 0.65))
                         .offset(y: displacement)
                         .accessibilityHidden(true)
                         .overlay(alignment: .bottom) {
@@ -74,11 +75,11 @@ struct SignInView: View {
                                 .opacity(isAuthenticating ? 1 : 0)
                                 .accessibilityHidden(!isAuthenticating)
                         }
-                        .position(x: geometry.size.width / 2, y: max(80, (geometry.size.height - 240) / 2))
+                        .position(x: geometry.size.width / 2, y: logoSpace / 2)
+                        .allowsHitTesting(false)
                 }
             }
         }
-        .ignoresSafeArea(.keyboard)
         .overlay(alignment: .bottom) {
             VStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
