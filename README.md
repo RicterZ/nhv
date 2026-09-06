@@ -12,6 +12,7 @@ An unofficial nhentai iOS client written in Swift for browsing, searching, and m
 - Favorites browsing, with actions to add or remove favorites.
 - Dark and light themes; English, Simplified Chinese, and Japanese; optional language filtering for Home and Search.
 - Current account information and local image cache cleanup.
+- Persistent disk caching for downloaded images, with bounded in-memory caching. Clear both from Settings.
 
 ## Build and install
 

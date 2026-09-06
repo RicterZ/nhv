@@ -6,6 +6,8 @@ struct ProfileView: View {
     @Environment(MediaStore.self) private var media
     @Environment(LanguagePreference.self) private var language
     @State private var showsCacheCleared = false
+    @State private var cacheError: (any Error)?
+    @State private var showsCacheError = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let user: CurrentUser
 
@@ -40,8 +42,13 @@ struct ProfileView: View {
             Section {
                 Button(role: .destructive) {
                     Task {
-                        await media.clearImageCache()
-                        showsCacheCleared = true
+                        do {
+                            try await media.clearImageCache()
+                            showsCacheCleared = true
+                        } catch {
+                            cacheError = error
+                            showsCacheError = true
+                        }
                     }
                 } label: {
                     HStack {
@@ -87,6 +94,11 @@ struct ProfileView: View {
         .navigationTitle("Settings")
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
+        }
+        .alert("Unable to clear cache", isPresented: $showsCacheError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let cacheError { Text(ErrorMessage.text(for: cacheError)) }
         }
     }
 

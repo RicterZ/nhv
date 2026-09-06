@@ -30,11 +30,12 @@ final class MediaStore {
         try? resolver?.url(for: path, kind: .image)
     }
 
-    func clearImageCache() async {
+    func clearImageCache() async throws {
         guard !isClearingCache else { return }
         isClearingCache = true
-        await thumbnails.clearCache()
-        await reader.clearCache()
-        isClearingCache = false
+        defer { isClearingCache = false }
+        async let thumbnailClear: Void = thumbnails.clearCache()
+        async let readerClear: Void = reader.clearCache()
+        _ = try await (thumbnailClear, readerClear)
     }
 }

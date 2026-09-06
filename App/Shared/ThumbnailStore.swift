@@ -1,5 +1,4 @@
 import Foundation
-import ImageIO
 import Observation
 import UIKit
 import NHVCore
@@ -17,7 +16,7 @@ final class ThumbnailStore {
     @ObservationIgnored private var resumeTask: Task<Void, Never>?
     @ObservationIgnored private var pausedUntil: Date?
     @ObservationIgnored private let session: URLSession
-    @ObservationIgnored private let responseCache: URLCache
+    @ObservationIgnored private let diskCache = ImageDiskCache(namespace: "thumbnails")
 
     init() {
         cache.totalCostLimit = 48 * 1024 * 1024
@@ -27,8 +26,7 @@ final class ThumbnailStore {
         config.httpMaximumConnectionsPerHost = 6
         config.timeoutIntervalForRequest = 25
         config.timeoutIntervalForResource = 40
-        responseCache = URLCache(memoryCapacity: 8 * 1024 * 1024, diskCapacity: 96 * 1024 * 1024)
-        config.urlCache = responseCache
+        config.urlCache = nil
         session = URLSession(configuration: config)
     }
 
@@ -56,19 +54,20 @@ final class ThumbnailStore {
         queue.removeAll()
     }
 
-    func clearCache() async {
+    func clearCache() async throws {
         guard !isClearingCache else { return }
         isClearingCache = true
+        defer { isClearingCache = false }
         let downloads = Array(active.values)
         cancel()
         // Wait for cancelled transfers/decoders before removing their cached responses.
         for download in downloads { await download.value }
         cache.removeAllObjects()
-        responseCache.removeAllCachedResponses()
         failures.removeAll()
         cacheGeneration += 1
         revision += 1
-        isClearingCache = false
+        pausedUntil = nil
+        try await diskCache.clear()
     }
 
     private func pump() {
@@ -85,36 +84,19 @@ final class ThumbnailStore {
         }
         while let url = queue.next() {
             let session = session
+            let diskCache = diskCache
             active[url] = Task { [weak self] in
                 do {
-                    var request = URLRequest(url: url)
-                    request.setValue(AppConfiguration.userAgent, forHTTPHeaderField: "User-Agent")
-                    let (data, response) = try await session.data(for: request)
+                    let image = try await diskCache.image(for: url, session: session, maximumPixelSize: 600)
                     try Task.checkCancellation()
-                    guard let response = response as? HTTPURLResponse else { throw APIError.invalidResponse }
-                    if response.statusCode == 429 {
-                        let delay = Double(response.value(forHTTPHeaderField: "Retry-After") ?? "") ?? 30
-                        self?.pausedUntil = Date().addingTimeInterval(delay.isFinite ? max(1, delay) : 30)
-                        throw APIError.rateLimited(retryAfter: delay)
-                    }
-                    guard (200..<300).contains(response.statusCode) else { throw APIError.server(status: response.statusCode) }
-                    let image = await Task.detached(priority: .utility) {
-                        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return UIImage?.none }
-                        let options: [CFString: Any] = [
-                            kCGImageSourceCreateThumbnailFromImageAlways: true,
-                            kCGImageSourceCreateThumbnailWithTransform: true,
-                            kCGImageSourceThumbnailMaxPixelSize: 600,
-                            kCGImageSourceShouldCacheImmediately: true
-                        ]
-                        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return UIImage?.none }
-                        return UIImage(cgImage: cgImage)
-                    }.value
-                    try Task.checkCancellation()
-                    guard let self, let image else { throw APIError.decoding }
+                    guard let self else { return }
                     let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
                     self.cache.setObject(image, forKey: url as NSURL, cost: cost)
                     self.revision += 1
                 } catch {
+                    if !Task.isCancelled, case .rateLimited(let delay) = error as? APIError {
+                        self?.pausedUntil = Date().addingTimeInterval(delay ?? 30)
+                    }
                     if !Task.isCancelled { self?.failures.insert(url) }
                 }
                 guard !Task.isCancelled, let self else { return }

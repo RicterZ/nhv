@@ -1,5 +1,4 @@
 import Foundation
-import ImageIO
 import NHVCore
 import Observation
 import UIKit
@@ -9,13 +8,12 @@ final class ReaderImageStore {
     private(set) var images: [URL: UIImage] = [:]
     @ObservationIgnored private var tasks: [URL: Task<Void, Never>] = [:]
     @ObservationIgnored private var wanted: Set<URL> = []
-    @ObservationIgnored private let responseCache: URLCache
+    @ObservationIgnored private let diskCache = ImageDiskCache(namespace: "pages")
     @ObservationIgnored private let session: URLSession
+    private(set) var isClearingCache = false
 
     init(configuration: URLSessionConfiguration = .ephemeral) {
-        let cache = URLCache(memoryCapacity: 0, diskCapacity: 256 * 1024 * 1024, diskPath: "reader-images")
-        responseCache = cache
-        configuration.urlCache = cache
+        configuration.urlCache = nil
         configuration.httpShouldSetCookies = false
         configuration.httpCookieStorage = nil
         configuration.httpMaximumConnectionsPerHost = 3
@@ -26,7 +24,7 @@ final class ReaderImageStore {
 
     /// Register the visible page first, followed by exactly the next two pages.
     func focus(on index: Int, urls: [URL?]) {
-        guard urls.indices.contains(index) else { return }
+        guard !isClearingCache, urls.indices.contains(index) else { return }
         let requested = urls[index..<min(urls.count, index + 3)].compactMap { $0 }
         wanted = Set(requested)
         for url in Array(tasks.keys) where !wanted.contains(url) {
@@ -47,11 +45,14 @@ final class ReaderImageStore {
         images.removeAll()
     }
 
-    func clearCache() async {
+    func clearCache() async throws {
+        guard !isClearingCache else { return }
+        isClearingCache = true
+        defer { isClearingCache = false }
         let pending = Array(tasks.values)
         cancel()
         for task in pending { await task.value }
-        responseCache.removeAllCachedResponses()
+        try await diskCache.clear()
     }
 
     private func load(_ url: URL) async {
@@ -59,35 +60,17 @@ final class ReaderImageStore {
         while !Task.isCancelled && wanted.contains(url) {
             var delay = min(30.0, pow(2, Double(min(failures, 5))))
             do {
-                var request = URLRequest(url: url)
-                request.setValue(AppConfiguration.userAgent, forHTTPHeaderField: "User-Agent")
-                if failures > 0 { request.cachePolicy = .reloadIgnoringLocalCacheData }
-                let (data, response) = try await session.data(for: request)
+                let image = try await diskCache.image(for: url, session: session, maximumPixelSize: 4096)
                 try Task.checkCancellation()
-                guard let response = response as? HTTPURLResponse else { throw APIError.invalidResponse }
-                if let seconds = response.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init), seconds.isFinite {
-                    delay = max(delay, seconds)
-                }
-                guard (200..<300).contains(response.statusCode) else { throw APIError.server(status: response.statusCode) }
-                let image = await Task.detached(priority: .userInitiated) {
-                    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return UIImage?.none }
-                    let options: [CFString: Any] = [
-                        kCGImageSourceCreateThumbnailFromImageAlways: true,
-                        kCGImageSourceCreateThumbnailWithTransform: true,
-                        kCGImageSourceThumbnailMaxPixelSize: 4096,
-                        kCGImageSourceShouldCacheImmediately: true,
-                    ]
-                    guard let bitmap = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return UIImage?.none }
-                    return UIImage(cgImage: bitmap)
-                }.value
-                try Task.checkCancellation()
-                guard let image else { throw APIError.decoding }
                 guard wanted.contains(url) else { return }
                 images[url] = image
                 tasks[url] = nil
                 return
             } catch {
                 if Task.isCancelled { return }
+                if case .rateLimited(let retryAfter) = error as? APIError {
+                    delay = max(delay, retryAfter ?? 30)
+                }
                 failures += 1
                 do { try await Task.sleep(for: .seconds(delay)) } catch { return }
             }

@@ -1,6 +1,14 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Unable to clear cache" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to clear cache" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法清理缓存" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "キャッシュを削除できません" } }
+      }
+    },
     "%lld / %lld" : {
       "localizations" : {
         "en" : {
