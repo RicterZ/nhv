@@ -1,14 +1,24 @@
 import SwiftUI
+import UIKit
 
 struct GalleryCover: View {
     let url: URL?
     var fillsStandardCoverWidth = false
+    var retainsLoadedImage = false
     @Environment(MediaStore.self) private var media
+    @State private var retainedImage: UIImage?
+    @State private var retainedURL: URL?
+
+    private var displayedImage: UIImage? {
+        guard let url else { return nil }
+        if retainsLoadedImage, retainedURL == url, let retainedImage { return retainedImage }
+        return media.thumbnails.image(for: url)
+    }
 
     var body: some View {
         GeometryReader { geometry in
             Group {
-                if let url, let image = media.thumbnails.image(for: url) {
+                if let image = displayedImage {
                     let ratio = image.size.width / max(1, image.size.height)
                     Group {
                         if fillsStandardCoverWidth && (480.0 / 720.0...520.0 / 680.0).contains(ratio) {
@@ -42,7 +52,25 @@ struct GalleryCover: View {
             }
         }
         .onAppear {
+            retainImageIfAvailable()
             if let url { media.thumbnails.enqueue([url]) }
         }
+        .onChange(of: url) { _, _ in
+            retainedImage = nil
+            retainedURL = nil
+            retainImageIfAvailable()
+            if let url { media.thumbnails.enqueue([url]) }
+        }
+        .onChange(of: media.thumbnails.revision) { _, _ in retainImageIfAvailable() }
+        .onChange(of: media.thumbnails.cacheGeneration) { _, _ in
+            retainedImage = nil
+            retainedURL = nil
+        }
+    }
+
+    private func retainImageIfAvailable() {
+        guard retainsLoadedImage, let url, let image = media.thumbnails.image(for: url) else { return }
+        retainedURL = url
+        retainedImage = image
     }
 }

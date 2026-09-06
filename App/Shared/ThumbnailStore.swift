@@ -8,6 +8,7 @@ import NHVCore
 @MainActor @Observable
 final class ThumbnailStore {
     private(set) var revision = 0
+    private(set) var cacheGeneration = 0
     private(set) var failures: Set<URL> = []
     private(set) var isClearingCache = false
     @ObservationIgnored private let cache = NSCache<NSURL, UIImage>()
@@ -65,6 +66,7 @@ final class ThumbnailStore {
         cache.removeAllObjects()
         responseCache.removeAllCachedResponses()
         failures.removeAll()
+        cacheGeneration += 1
         revision += 1
         isClearingCache = false
     }

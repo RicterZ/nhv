@@ -22,7 +22,7 @@ struct GalleryDetailView: View {
                         InlineErrorView(error: mediaError)
                         Button("Try Again") { Task { await load() } }
                     }
-                    GalleryCover(url: media.thumbnail(gallery.cover.path))
+                    GalleryCover(url: media.thumbnail(gallery.cover.path), retainsLoadedImage: true)
                         .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
                         .frame(maxWidth: .infinity)
 
@@ -161,7 +161,7 @@ struct GalleryDetailView: View {
             await media.prepare(api: api)
             let result = try await api.gallery(id: id)
             try Task.checkCancellation()
-            media.thumbnails.enqueue(([result.cover.path] + result.pages.map(\.thumbnail)).compactMap { media.thumbnail($0) })
+            media.thumbnails.enqueue(([result.cover.path] + result.pages.prefix(6).map(\.thumbnail)).compactMap { media.thumbnail($0) })
             favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites)
             languages.remember(result.tags)
             gallery = result
