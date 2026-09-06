@@ -7,6 +7,7 @@ struct GalleryDetailView: View {
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
+    @Environment(\.locale) private var locale
     @State private var gallery: GalleryDetail?
     @State private var error: (any Error)?
     @State private var favoriteError: (any Error)?
@@ -48,7 +49,7 @@ struct GalleryDetailView: View {
                                     .foregroundStyle(favorites.states[id]?.favorited == true
                                         ? Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255)
                                         : Color.secondary)
-                                Text((favorites.states[id]?.count ?? gallery.numFavorites).formatted())
+                                Text(favorites.states[id]?.count ?? gallery.numFavorites, format: .number)
                                     .monospacedDigit()
                             }
                             .opacity(favorites.updating.contains(id) ? 0.3 : 1)
@@ -61,7 +62,7 @@ struct GalleryDetailView: View {
                         .buttonStyle(.plain)
                         .disabled(favorites.updating.contains(id) || favorites.states[id] == nil)
                         .accessibilityLabel(favorites.states[id]?.favorited == true ? Text("Unfavorite") : Text("Favorite"))
-                        .accessibilityValue((favorites.states[id]?.count ?? gallery.numFavorites).formatted())
+                        .accessibilityValue((favorites.states[id]?.count ?? gallery.numFavorites).formatted(.number.locale(locale)))
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -80,7 +81,7 @@ struct GalleryDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
                             FlowLayout {
-                                Text(tagTypeTitle(type))
+                                tagTypeTitle(type)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.secondary)
                                     .padding(.trailing, 4)
@@ -91,7 +92,7 @@ struct GalleryDetailView: View {
                                         HStack(spacing: 4) {
                                             Text(verbatim: tag.name)
                                                 .fixedSize(horizontal: false, vertical: true)
-                                            Text(tag.count.formatted(.number.notation(.compactName)))
+                                            Text(tag.count, format: .number.notation(.compactName))
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
                                                 .fixedSize()
@@ -113,7 +114,7 @@ struct GalleryDetailView: View {
                                 GalleryCover(url: media.thumbnail(page.thumbnail))
                                     .aspectRatio(0.7, contentMode: .fit)
                                     .overlay(alignment: .bottomTrailing) {
-                                        Text(page.number.formatted())
+                                        Text(page.number, format: .number)
                                             .font(.caption2.monospacedDigit())
                                             .padding(4)
                                             .background(.black.opacity(0.8))
@@ -169,16 +170,16 @@ struct GalleryDetailView: View {
         catch { favoriteError = error }
     }
 
-    private func tagTypeTitle(_ type: String) -> String {
+    private func tagTypeTitle(_ type: String) -> Text {
         switch type {
-        case "artist": String(localized: "Artists")
-        case "group": String(localized: "Groups")
-        case "parody": String(localized: "Parodies")
-        case "character": String(localized: "Characters")
-        case "language": String(localized: "Languages")
-        case "category": String(localized: "Categories")
-        case "tag": String(localized: "Tags")
-        default: type
+        case "artist": Text("Artists")
+        case "group": Text("Groups")
+        case "parody": Text("Parodies")
+        case "character": Text("Characters")
+        case "language": Text("Languages")
+        case "category": Text("Categories")
+        case "tag": Text("Tags")
+        default: Text(verbatim: type)
         }
     }
 }

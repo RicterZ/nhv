@@ -139,7 +139,11 @@ private struct GalleryCard: View {
                 .font(.subheadline.weight(.medium))
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Label((favorites.states[gallery.id]?.count ?? gallery.numFavorites).formatted(), systemImage: favorites.states[gallery.id]?.favorited == true ? "heart.fill" : "heart")
+            Label {
+                Text(favorites.states[gallery.id]?.count ?? gallery.numFavorites, format: .number)
+            } icon: {
+                Image(systemName: favorites.states[gallery.id]?.favorited == true ? "heart.fill" : "heart")
+            }
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

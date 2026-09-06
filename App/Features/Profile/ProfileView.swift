@@ -4,14 +4,26 @@ import NHVCore
 struct ProfileView: View {
     @Environment(SessionStore.self) private var session
     @Environment(MediaStore.self) private var media
+    @Environment(LanguagePreference.self) private var language
     @State private var showsCacheCleared = false
     let user: CurrentUser
 
     var body: some View {
+        @Bindable var language = language
         List {
             Section("Account") {
                 LabeledContent("Username", value: user.username)
                 if !user.about.isEmpty { Text(verbatim: user.about) }
+            }
+            Section {
+                Picker("Language", selection: $language.selection) {
+                    ForEach(AppLanguage.allCases, id: \.self) { option in
+                        Text(verbatim: option.definition.nativeName).tag(option)
+                    }
+                }
+                Toggle("Filter by App Language", isOn: $language.filterGalleries)
+            } footer: {
+                Text("Show only galleries in the selected language on Home and Search.")
             }
             Section {
                 Button {

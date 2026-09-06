@@ -15,6 +15,12 @@
             "state": "translated",
             "value": "API Key"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキー"
+          }
         }
       }
     },
@@ -31,6 +37,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン"
           }
         }
       }
@@ -49,6 +61,12 @@
             "state": "translated",
             "value": "正在登录…"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン中…"
+          }
         }
       }
     },
@@ -65,6 +83,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在恢复登录…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン状態を復元中…"
           }
         }
       }
@@ -83,6 +107,12 @@
             "state": "translated",
             "value": "无法恢复登录"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログイン状態を復元できません"
+          }
         }
       }
     },
@@ -99,6 +129,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "重试"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再試行"
           }
         }
       }
@@ -117,6 +153,12 @@
             "state": "translated",
             "value": "使用其他 API Key"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別のAPIキーを使用"
+          }
         }
       }
     },
@@ -133,6 +175,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "首页"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホーム"
           }
         }
       }
@@ -151,6 +199,12 @@
             "state": "translated",
             "value": "搜索"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索"
+          }
         }
       }
     },
@@ -168,6 +222,12 @@
             "state": "translated",
             "value": "我的"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイページ"
+          }
         }
       }
     },
@@ -181,6 +241,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "作品"
@@ -202,6 +268,12 @@
             "state": "translated",
             "value": "浏览最新作品"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最新の作品を見る"
+          }
         }
       }
     },
@@ -218,6 +290,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "按标题、作者或标签查找作品"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトル・作者・タグで作品を検索"
           }
         }
       }
@@ -236,6 +314,12 @@
             "state": "translated",
             "value": "收藏"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入り"
+          }
         }
       }
     },
@@ -252,6 +336,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "你收藏的作品"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りの作品"
           }
         }
       }
@@ -270,6 +360,12 @@
             "state": "translated",
             "value": "账号"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アカウント"
+          }
         }
       }
     },
@@ -286,6 +382,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "用户名"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ユーザー名"
           }
         }
       }
@@ -304,6 +406,12 @@
             "state": "translated",
             "value": "退出登录"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログアウト"
+          }
         }
       }
     },
@@ -320,6 +428,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法访问已保存的 API Key，请重试。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存したAPIキーにアクセスできません。もう一度お試しください。"
           }
         }
       }
@@ -338,6 +452,12 @@
             "state": "translated",
             "value": "操作失败，请重试。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エラーが発生しました。もう一度お試しください。"
+          }
         }
       }
     },
@@ -354,6 +474,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "请输入 API Key，无需添加 Key 前缀或空格。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキーを入力してください。Keyの接頭辞や空白は不要です。"
           }
         }
       }
@@ -372,6 +498,12 @@
             "state": "translated",
             "value": "请输入搜索内容。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索条件を入力してください。"
+          }
         }
       }
     },
@@ -388,6 +520,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "页码必须从 1 开始。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ページ番号は1以上で指定してください。"
           }
         }
       }
@@ -406,6 +544,12 @@
             "state": "translated",
             "value": "每页数量必须为 1–100。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1ページの件数は1〜100で指定してください。"
+          }
         }
       }
     },
@@ -422,6 +566,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "作品 ID 必须大于 0。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品IDは0より大きい値で指定してください。"
           }
         }
       }
@@ -440,6 +590,12 @@
             "state": "translated",
             "value": "标签地址不能为空。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タグのアドレスを入力してください。"
+          }
         }
       }
     },
@@ -456,6 +612,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "标签结果数量必须为 1–50。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タグの取得件数は1〜50で指定してください。"
           }
         }
       }
@@ -474,6 +636,12 @@
             "state": "translated",
             "value": "请求地址无效。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リクエストのアドレスが無効です。"
+          }
         }
       }
     },
@@ -490,6 +658,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API Key 无效或已失效，请重新输入。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキーが無効、または期限切れです。再入力してください。"
           }
         }
       }
@@ -508,6 +682,12 @@
             "state": "translated",
             "value": "当前请求无权限，或此功能暂时不可用。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセスが拒否されたか、この機能は現在利用できません。"
+          }
         }
       }
     },
@@ -524,6 +704,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "内容不存在或已被移除。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品が見つからないか、削除されています。"
           }
         }
       }
@@ -542,6 +728,12 @@
             "state": "translated",
             "value": "请求过于频繁，请稍后重试。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リクエストが多すぎます。しばらくしてからお試しください。"
+          }
         }
       }
     },
@@ -558,6 +750,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "请求失败（HTTP %lld），请重试。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リクエストに失敗しました（HTTP %lld）。もう一度お試しください。"
           }
         }
       }
@@ -576,6 +774,12 @@
             "state": "translated",
             "value": "服务器返回了无效的响应。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバーから無効な応答が返されました。"
+          }
         }
       }
     },
@@ -593,6 +797,12 @@
             "state": "translated",
             "value": "当前客户端版本不支持此数据格式。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この応答形式は現在のアプリではサポートされていません。"
+          }
         }
       }
     },
@@ -609,6 +819,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接，请检查网络后重试。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続できません。ネットワークを確認して、もう一度お試しください。"
           }
         }
       }
@@ -631,6 +847,12 @@
             "state": "translated",
             "value": "粘贴你的 API Key"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキーを貼り付け"
+          }
         }
       }
     },
@@ -647,6 +869,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "图片暂不可用"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を表示できません"
           }
         }
       }
@@ -665,6 +893,12 @@
             "state": "translated",
             "value": "正在加载作品…"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品を読み込み中…"
+          }
         }
       }
     },
@@ -681,6 +915,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂无作品"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品がありません"
           }
         }
       }
@@ -699,6 +939,12 @@
             "state": "translated",
             "value": "下拉刷新。"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下に引いて更新してください。"
+          }
         }
       }
     },
@@ -715,6 +961,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "加载更多"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "さらに読み込む"
           }
         }
       }
@@ -733,6 +985,12 @@
             "state": "translated",
             "value": "排序"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "並び替え"
+          }
         }
       }
     },
@@ -749,6 +1007,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "最新"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新着順"
           }
         }
       }
@@ -767,6 +1031,12 @@
             "state": "translated",
             "value": "热门"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "人気順"
+          }
         }
       }
     },
@@ -780,6 +1050,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "今日"
@@ -801,6 +1077,12 @@
             "state": "translated",
             "value": "本周"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今週"
+          }
         }
       }
     },
@@ -817,6 +1099,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "本月"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今月"
           }
         }
       }
@@ -835,6 +1123,12 @@
             "state": "translated",
             "value": "搜索收藏"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りを検索"
+          }
         }
       }
     },
@@ -851,6 +1145,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索作品"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品を検索"
           }
         }
       }
@@ -869,6 +1169,12 @@
             "state": "translated",
             "value": "收藏"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りに追加"
+          }
         }
       }
     },
@@ -885,6 +1191,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消收藏"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りから削除"
           }
         }
       }
@@ -903,6 +1215,12 @@
             "state": "translated",
             "value": "上传日期"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投稿日"
+          }
         }
       }
     },
@@ -919,6 +1237,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "汉化组"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翻訳グループ"
           }
         }
       }
@@ -937,6 +1261,12 @@
             "state": "translated",
             "value": "页面"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ページ"
+          }
         }
       }
     },
@@ -954,6 +1284,12 @@
             "state": "translated",
             "value": "正在加载详情…"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作品を読み込み中…"
+          }
         }
       }
     },
@@ -967,6 +1303,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作者"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "作者"
@@ -988,6 +1330,12 @@
             "state": "translated",
             "value": "社团"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サークル"
+          }
         }
       }
     },
@@ -1001,6 +1349,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原作"
+          }
+        },
+        "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "原作"
@@ -1022,6 +1376,12 @@
             "state": "translated",
             "value": "角色"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャラクター"
+          }
         }
       }
     },
@@ -1038,6 +1398,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "语言"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語"
           }
         }
       }
@@ -1056,6 +1422,12 @@
             "state": "translated",
             "value": "分类"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カテゴリ"
+          }
         }
       }
     },
@@ -1072,6 +1444,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "标签"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タグ"
           }
         }
       }
@@ -1102,6 +1480,12 @@
             "state": "translated",
             "value": "%lld 页"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lldページ"
+          }
         }
       }
     },
@@ -1118,6 +1502,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "清理缓存"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャッシュを削除"
           }
         }
       }
@@ -1136,6 +1526,12 @@
             "state": "translated",
             "value": "缓存已清理"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャッシュを削除しました"
+          }
         }
       }
     },
@@ -1153,6 +1549,12 @@
             "state": "translated",
             "value": "好"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
         }
       }
     },
@@ -1169,6 +1571,81 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除筛选条件：%@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索条件を削除：%@"
+          }
+        }
+      }
+    },
+    "Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語"
+          }
+        }
+      }
+    },
+    "Filter by App Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter by App Language"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按界面语言筛选"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリの言語で絞り込む"
+          }
+        }
+      }
+    },
+    "Show only galleries in the selected language on Home and Search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show only galleries in the selected language on Home and Search."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首页和搜索仅显示所选语言的作品。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホームと検索で、選択した言語の作品のみを表示します。"
           }
         }
       }

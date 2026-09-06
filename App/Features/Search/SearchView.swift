@@ -3,6 +3,7 @@ import NHVCore
 
 struct SearchView: View {
     let api: NHentaiAPI
+    @Environment(LanguagePreference.self) private var language
     @State private var input = ""
     @State private var terms: [String] = []
     @State private var sort = GallerySort.date
@@ -21,7 +22,7 @@ struct SearchView: View {
                 if terms.isEmpty {
                     ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
                 } else {
-                    GalleryCollectionView(api: api, query: .search(query, sort))
+                    GalleryCollectionView(api: api, query: language.applyingFilter(to: .search(query, sort)))
                 }
             }
         }

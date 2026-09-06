@@ -5,6 +5,21 @@ public enum GalleryQuery: Hashable, Sendable {
     case favorites(String)
     case search(String, GallerySort)
     case tag(Int, GallerySort)
+
+    /// Filter server-side, so pagination and totals reflect the chosen language.
+    public func filtered(language: AppLanguage?) -> GalleryQuery {
+        guard let language else { return self }
+        let filter = "language:\(language.definition.galleryTag)"
+        switch self {
+        case .latest:
+            return .search(filter, .date)
+        case .search(let text, let sort):
+            // Put the constraint first so an unfinished quote cannot absorb it.
+            return .search(text.isEmpty ? filter : "\(filter) \(text)", sort)
+        case .favorites, .tag:
+            return self
+        }
+    }
 }
 
 extension NHentaiAPI {
