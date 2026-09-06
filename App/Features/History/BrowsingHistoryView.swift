@@ -16,7 +16,11 @@ struct BrowsingHistoryView: View {
     }
 
     var body: some View {
-        GalleryScrollView(header: { EmptyView() }) {
+        GalleryScrollView(header: {
+            HistorySearchField(text: $query)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+        }) {
             LazyVStack(spacing: 24) {
                 if let error {
                     InlineErrorView(error: error)
@@ -40,7 +44,7 @@ struct BrowsingHistoryView: View {
         }
         .background(Color(uiColor: .systemBackground))
         .localizedNavigationTitle("Browsing History")
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search history titles")
+        .scrollDismissesKeyboard(.interactively)
         .task { await reload() }
         .task {
             await media.prepare(api: api)
