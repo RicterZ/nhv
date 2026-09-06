@@ -40,14 +40,20 @@ struct ProfileView: View {
                 }
                 .tint(theme.accentColor)
                 .id("language-\(theme.rawValue)")
-                Toggle("Filter by App Language", isOn: $language.filterGalleries)
+                Toggle(isOn: $language.filterGalleries) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Language Filter")
+                        Text("Show only galleries in the selected language on Home and Search.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
                 }
             } header: {
                 Text("Settings")
-            } footer: {
-                Text("Show only galleries in the selected language on Home and Search.")
             }
             Section {
                 LabeledContent("Current Cache Size") {

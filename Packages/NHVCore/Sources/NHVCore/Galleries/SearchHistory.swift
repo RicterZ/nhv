@@ -7,10 +7,13 @@ public final class SearchHistory {
     public private(set) var queries: [String]
     @ObservationIgnored private let defaults: UserDefaults
     private static let key = "searchHistory.queries"
-    private static let limit = 20
+    private static let limit = 10
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // SwiftUI can construct this store while rebuilding a view. Keep init
+        // read-only: defaults writes would invalidate other @AppStorage views.
+        // The next explicit record/clear persists the bounded history.
         queries = Array((defaults.stringArray(forKey: Self.key) ?? []).prefix(Self.limit))
     }
 
