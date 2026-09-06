@@ -1,8 +1,11 @@
 import SwiftUI
+import NHVCore
 
 struct HomeView: View {
+    let api: NHentaiAPI
+
     var body: some View {
-        ContentUnavailableView("Galleries", systemImage: "books.vertical", description: Text("Browse the latest galleries"))
+        GalleryCollectionView(api: api, query: .latest)
             .navigationTitle("Home")
     }
 }
