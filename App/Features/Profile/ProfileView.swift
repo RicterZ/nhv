@@ -14,6 +14,7 @@ struct ProfileView: View {
     @State private var cacheError: (any Error)?
     @State private var showsCacheError = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
+    @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     let user: CurrentUser
     let api: NHentaiAPI
 
@@ -40,6 +41,9 @@ struct ProfileView: View {
                 .tint(theme.accentColor)
                 .id("language-\(theme.rawValue)")
                 Toggle("Filter by App Language", isOn: $language.filterGalleries)
+                Toggle(isOn: $nsfwEnabled) {
+                    Text(verbatim: "NSFW")
+                }
             } header: {
                 Text("Settings")
             } footer: {

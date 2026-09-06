@@ -31,6 +31,7 @@ private struct GalleryFeedView<Header: View>: View {
     @State private var feed: GalleryFeed
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
+    @State private var selectedGallery: GallerySummary?
 
     init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore, @ViewBuilder header: @escaping () -> Header) {
         self.api = api
@@ -74,7 +75,8 @@ private struct GalleryFeedView<Header: View>: View {
 
                 if !feed.items.isEmpty {
                     GalleryGrid(galleries: feed.items, api: api, showsFavoriteCount: showsFavoriteCount,
-                        prefersResultFavoriteCount: prefersResultFavoriteCount)
+                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true,
+                        openDetail: { selectedGallery = $0 })
                 }
 
                 if let error = feed.error {
@@ -96,6 +98,14 @@ private struct GalleryFeedView<Header: View>: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(uiColor: .systemBackground))
+        .navigationDestination(isPresented: Binding(
+            get: { selectedGallery != nil },
+            set: { if !$0 { selectedGallery = nil } }
+        )) {
+            if let selectedGallery {
+                GalleryDetailView(api: api, summary: selectedGallery)
+            }
+        }
         .refreshable {
             await media.prepare(api: api)
             await feed.refresh()
@@ -128,6 +138,8 @@ struct GalleryGrid: View {
     let showsFavoriteCount: Bool
     var recordsBrowsingHistory = true
     var prefersResultFavoriteCount = false
+    var respectsNSFWSetting = false
+    var openDetail: ((GallerySummary) -> Void)?
     @Environment(MediaStore.self) private var media
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
 
@@ -136,7 +148,8 @@ struct GalleryGrid: View {
             ForEach(galleries) { gallery in
                 GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail, galleryID: gallery.id), api: api,
                     showsFavoriteCount: showsFavoriteCount, recordsBrowsingHistory: recordsBrowsingHistory,
-                    prefersResultFavoriteCount: prefersResultFavoriteCount)
+                    prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: respectsNSFWSetting,
+                    openDetail: { openDetail?(gallery) })
             }
         }
     }
@@ -149,16 +162,38 @@ private struct GalleryCard: View {
     let showsFavoriteCount: Bool
     let recordsBrowsingHistory: Bool
     let prefersResultFavoriteCount: Bool
+    let respectsNSFWSetting: Bool
+    let openDetail: () -> Void
+    @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
+    @Environment(CoverPreview.self) private var preview
+
+    private var hidesCover: Bool { respectsNSFWSetting && !nsfwEnabled }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NavigationLink {
-                GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
-            } label: {
-                GalleryCover(url: url, fillsStandardCoverWidth: true)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 240)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            Group {
+                if hidesCover {
+                    cover
+                        .blur(radius: 8, opaque: true)
+                        .overlay(.ultraThinMaterial.opacity(0.35))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay {
+                            CoverHoldGesture(open: openDetail, preview: { shows in
+                                if shows {
+                                    preview.show(.init(id: gallery.id, url: url, title: gallery.englishTitle))
+                                } else { preview.dismiss(id: gallery.id) }
+                            })
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(verbatim: gallery.englishTitle))
+                        .accessibilityHint(Text("Hold to preview cover"))
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { openDetail() }
+                } else {
+                    NavigationLink {
+                        GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
+                    } label: { cover }
+                }
             }
             .buttonStyle(.plain)
             .overlay(alignment: .topTrailing) {
@@ -190,5 +225,13 @@ private struct GalleryCard: View {
             .buttonStyle(.plain)
         }
         .foregroundStyle(.primary)
+        .onDisappear { preview.dismiss(id: gallery.id) }
+    }
+
+    private var cover: some View {
+        GalleryCover(url: url, fillsStandardCoverWidth: true)
+            .frame(maxWidth: .infinity)
+            .frame(height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
