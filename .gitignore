@@ -1,4 +1,8 @@
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode user settings and build output
 .build/
 .swiftpm/
 DerivedData/
@@ -6,9 +10,31 @@ build/
 xcuserdata/
 *.xcuserstate
 *.xcuserdatad/
-.env
-.env.*
-!.env.example
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+*.hmap
+*.xcresult
+*.dSYM
+*.dSYM.zip
 *.xcarchive
 *.ipa
 
+# Dependency and automation output
+Pods/
+Carthage/Build/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Local credentials and environment
+.env
+.env.*
+!.env.example
+*.p12
+*.mobileprovision
+*.provisionprofile
+
+# Local API reference
+/openapi.json
