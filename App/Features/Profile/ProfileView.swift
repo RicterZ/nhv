@@ -31,8 +31,13 @@ struct ProfileView: View {
             Section {
                 Button("Sign Out", role: .destructive) { session.signOut() }
                 if let error = session.error { InlineErrorView(error: error) }
+            } header: {
+                Color.clear
+                    .frame(height: 16)
+                    .accessibilityHidden(true)
             }
         }
+        .listSectionSpacing(12)
         .navigationTitle("Me")
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
