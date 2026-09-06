@@ -1155,6 +1155,23 @@
           }
         }
       }
+    },
+    "Remove filter: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove filter: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除筛选条件：%@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

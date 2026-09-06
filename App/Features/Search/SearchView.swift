@@ -4,19 +4,33 @@ import NHVCore
 struct SearchView: View {
     let api: NHentaiAPI
     @State private var input = ""
-    @State private var query = ""
+    @State private var terms: [String] = []
     @State private var sort = GallerySort.date
+
+    private var query: String { terms.joined(separator: " ") }
 
     var body: some View {
         GalleryBrowsePage(title: Text("Search"), sort: $sort) {
-            if query.isEmpty {
-                ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
-            } else {
-                GalleryCollectionView(api: api, query: .search(query, sort))
+            VStack(spacing: 0) {
+                if !terms.isEmpty {
+                    SearchTermChips(terms: terms) { term in
+                        terms.removeAll { $0 == term }
+                    }
+                }
+
+                if terms.isEmpty {
+                    ContentUnavailableView("Search", systemImage: "magnifyingglass", description: Text("Find galleries by title, artist, or tag"))
+                } else {
+                    GalleryCollectionView(api: api, query: .search(query, sort))
+                }
             }
         }
         .searchable(text: $input, prompt: "Search galleries")
-        .onSubmit(of: .search) { query = input.trimmingCharacters(in: .whitespacesAndNewlines) }
-        .onChange(of: input) { _, value in if value.isEmpty { query = "" } }
+        .onSubmit(of: .search) {
+            for term in SearchTerms.split(input) where !terms.contains(term) {
+                terms.append(term)
+            }
+            input = ""
+        }
     }
 }
