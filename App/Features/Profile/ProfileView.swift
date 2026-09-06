@@ -49,6 +49,7 @@ struct ProfileView: View {
                         Spacer()
                         if media.thumbnails.isClearingCache { ProgressView() }
                     }
+                    .foregroundStyle(.red)
                 }
                 .disabled(media.thumbnails.isClearingCache)
             }
@@ -57,14 +58,29 @@ struct ProfileView: View {
                 Link(destination: URL(string: "https://github.com/RicterZ/nhv")!) {
                     HStack {
                         Text(verbatim: "GitHub")
+                            .foregroundStyle(Color.primary)
                         Spacer()
                         Text(verbatim: "RicterZ/nhv")
                             .foregroundStyle(theme.accentColor)
                         Image(systemName: "arrow.up.right")
                             .font(.caption)
+                            .foregroundStyle(theme.accentColor)
                     }
-                    .foregroundStyle(.primary)
                 }
+                .buttonStyle(.plain)
+            }
+            Section {
+                LabeledContent {
+                    Text(verbatim: "MIT")
+                } label: {
+                    Text(verbatim: "License")
+                }
+            } footer: {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(verbatim: "本项目为独立、非官方的开源客户端，与 nhentai 及其运营方不存在隶属、合作或背书关系，仅供学习、研究与个人使用。第三方内容及其版权归相应权利人所有，本项目不拥有或提供这些内容，也不参与用户、平台与版权方之间的争议。使用者应自行确认访问权限，遵守所在国家或地区的法律法规、年龄限制及平台服务条款，尊重知识产权，不得用于违法或侵权活动。软件按原样提供，不作任何保证；责任限制以 MIT 许可证及适用法律为准。本声明不免除任何依法应承担的责任。")
+                    Text(verbatim: "This is an independent, unofficial open-source client with no affiliation, partnership, or endorsement from nhentai or its operators. It is intended solely for learning, research, and personal use. Third-party content and copyrights belong to their respective rights holders. This project neither owns nor supplies that content and is not a party to disputes between users, platforms, and rights holders. Users must verify their right to access content, comply with the laws, age restrictions, and platform terms applicable in their country or region, and respect intellectual property rights. Unlawful or infringing use is prohibited. The software is provided as is, without warranty; limitations of liability are subject to the MIT License and applicable law. This notice does not exclude any liability that cannot lawfully be excluded.")
+                }
+                .textCase(nil)
             }
         }
         .listSectionSpacing(12)
