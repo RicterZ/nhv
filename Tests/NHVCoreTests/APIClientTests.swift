@@ -50,6 +50,8 @@ let emptyPage = #"{"result":[],"num_pages":0}"#
     #expect(items.first(where: { $0.name == "sort" })?.value == "popular-week")
     #expect(items.first(where: { $0.name == "page" })?.value == "2")
     #expect(!items.contains(where: { $0.name == "per_page" }))
+    #expect(request.url?.query?.contains("%2B") == true)
+    #expect(request.url?.query?.contains("+") == false)
 }
 
 @Test func listModelDoesNotInventFavoriteStatus() async throws {

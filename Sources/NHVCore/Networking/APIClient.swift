@@ -19,6 +19,8 @@ public struct APIClient: Sendable {
         var components = URLComponents(url: AppConfiguration.apiBaseURL, resolvingAgainstBaseURL: false)!
         components.percentEncodedPath = "/api/v2/" + encodedPath
         components.queryItems = query.isEmpty ? nil : query
+        // Form-style server parsers interpret a literal plus as a space.
+        components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         guard let url = components.url else { throw APIError.invalidInput(.url) }
         var request = URLRequest(url: url)
         request.httpMethod = method
