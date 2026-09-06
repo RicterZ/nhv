@@ -11,12 +11,12 @@ struct GallerySortPicker: View {
         } label: {
             if usesChipStyle {
                 HStack(spacing: 8) {
-                    Image(systemName: "line.3.horizontal.decrease")
+                    Image(systemName: "arrow.up.arrow.down")
                     selectionTitle
                 }
                 .modifier(GalleryFilterChipStyle())
             } else {
-                Label("Sort", systemImage: "line.3.horizontal.decrease")
+                Label("Sort", systemImage: "arrow.up.arrow.down")
                     .labelStyle(.iconOnly)
                     .font(.title3)
                     .frame(width: 44, height: 44)

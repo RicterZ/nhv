@@ -7,36 +7,33 @@ struct SearchSyntaxSuggestions: View {
 
     var body: some View {
         let exclude = SearchSyntax.isExcluding(in: input)
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                Text("Prefix a term with - to exclude it.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 10)
+        LazyVStack(alignment: .leading, spacing: 0) {
+            Text("Prefix a term with - to exclude it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 10)
 
-                ForEach(SearchSyntax.suggestions(for: input)) { syntax in
-                    Button {
-                        select(syntax)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(verbatim: (exclude ? "-" : "") + syntax.example)
-                                .font(.system(.subheadline, design: .monospaced).weight(.medium))
-                                .foregroundStyle(.tint)
-                            description(for: syntax.id)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                        .padding(.vertical, 6)
-                        .contentShape(Rectangle())
+            ForEach(SearchSyntax.suggestions(for: input)) { syntax in
+                Button {
+                    select(syntax)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(verbatim: (exclude ? "-" : "") + syntax.example)
+                            .font(.system(.subheadline, design: .monospaced).weight(.medium))
+                            .foregroundStyle(.tint)
+                        description(for: syntax.id)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    Divider().opacity(0.4)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                Divider().opacity(0.4)
             }
-            .padding(.horizontal, 16)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .padding(.horizontal, 16)
     }
 
     private func description(for id: String) -> Text {

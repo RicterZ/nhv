@@ -1,34 +1,43 @@
 import SwiftUI
 import NHVCore
 
-struct GalleryCollectionView: View {
+struct GalleryCollectionView<Header: View>: View {
     let api: NHentaiAPI
     let query: GalleryQuery
+    @ViewBuilder var header: () -> Header
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
 
     var body: some View {
-        GalleryFeedView(api: api, query: query, media: media, favorites: favorites)
+        GalleryFeedView(api: api, query: query, media: media, favorites: favorites, header: header)
             .id(query)
             .task { await languages.prepare(api: api) }
     }
 }
 
-private struct GalleryFeedView: View {
+extension GalleryCollectionView where Header == EmptyView {
+    init(api: NHentaiAPI, query: GalleryQuery) {
+        self.init(api: api, query: query, header: { EmptyView() })
+    }
+}
+
+private struct GalleryFeedView<Header: View>: View {
     let api: NHentaiAPI
     let media: MediaStore
     let favorites: FavoriteStore
     let query: GalleryQuery
+    let header: () -> Header
     @State private var feed: GalleryFeed
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
 
-    init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore) {
+    init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore, @ViewBuilder header: @escaping () -> Header) {
         self.api = api
         self.media = media
         self.favorites = favorites
         self.query = query
+        self.header = header
         _feed = State(initialValue: GalleryFeed(
             load: { page in try await api.galleries(matching: query, page: page) },
             willPublish: { items in
@@ -48,7 +57,7 @@ private struct GalleryFeedView: View {
     }
 
     var body: some View {
-        ScrollView {
+        GalleryScrollView(header: header) {
             LazyVStack(spacing: 24) {
                 if let error = media.error {
                     InlineErrorView(error: error)
