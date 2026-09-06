@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "NHVCore", targets: ["NHVCore"])],
     targets: [
-        .target(name: "NHVCore")
+        .target(name: "NHVCore"),
+        .testTarget(name: "NHVCoreTests", dependencies: ["NHVCore"])
     ]
 )
