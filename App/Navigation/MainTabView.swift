@@ -5,6 +5,7 @@ struct MainTabView: View {
     let account: AuthenticatedSession
     @State private var media = MediaStore()
     @State private var favorites = FavoriteStore()
+    @State private var languages = GalleryLanguageStore()
 
     var body: some View {
         TabView {
@@ -19,6 +20,7 @@ struct MainTabView: View {
         }
         .environment(media)
         .environment(favorites)
+        .environment(languages)
         .tint(Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255))
         .preferredColorScheme(.dark)
         .onDisappear { media.thumbnails.cancel() }

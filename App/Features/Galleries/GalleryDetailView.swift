@@ -6,6 +6,7 @@ struct GalleryDetailView: View {
     let id: Int
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
+    @Environment(GalleryLanguageStore.self) private var languages
     @State private var gallery: GalleryDetail?
     @State private var error: (any Error)?
     @State private var favoriteError: (any Error)?
@@ -25,7 +26,7 @@ struct GalleryDetailView: View {
                         .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(verbatim: gallery.title.pretty)
+                        GalleryTitleLabel(title: gallery.title.pretty, tagIDs: gallery.tags.map(\.id))
                             .font(.title2.bold())
                             .textSelection(.enabled)
                         if let japanese = gallery.title.japanese, !japanese.isEmpty {
@@ -137,6 +138,7 @@ struct GalleryDetailView: View {
             try Task.checkCancellation()
             media.thumbnails.enqueue(([result.cover.path] + result.pages.map(\.thumbnail)).compactMap { media.thumbnail($0) })
             favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites)
+            languages.remember(result.tags)
             gallery = result
             if result.isFavorited == nil {
                 let state = try await api.favorite(id: id)

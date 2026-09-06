@@ -6,10 +6,12 @@ struct GalleryCollectionView: View {
     let query: GalleryQuery
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
+    @Environment(GalleryLanguageStore.self) private var languages
 
     var body: some View {
         GalleryFeedView(api: api, query: query, media: media, favorites: favorites)
             .id(query)
+            .task { await languages.prepare(api: api) }
     }
 }
 
@@ -132,7 +134,7 @@ private struct GalleryCard: View {
                     }
                 }
 
-            Text(verbatim: gallery.englishTitle)
+            GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
