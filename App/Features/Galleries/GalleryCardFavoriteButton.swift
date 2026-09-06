@@ -6,6 +6,7 @@ struct GalleryCardFavoriteButton: View {
     let api: NHentaiAPI
     let showsCount: Bool
     @Environment(FavoriteStore.self) private var favorites
+    @Environment(\.colorScheme) private var colorScheme
     @State private var error: (any Error)?
     @State private var showsError = false
 
@@ -26,14 +27,14 @@ struct GalleryCardFavoriteButton: View {
                 }
                 if showsCount {
                     Text(favorites.states[gallery.id]?.count ?? gallery.numFavorites, format: .number)
-                        .foregroundStyle(.black.opacity(0.8))
+                        .foregroundStyle(colorScheme == .dark ? .white.opacity(0.9) : .black.opacity(0.8))
                         .monospacedDigit()
                 }
             }
             .font(.caption.weight(.semibold))
             .padding(.horizontal, showsCount ? 10 : 0)
             .frame(minWidth: 32, minHeight: 32)
-            .background(.white.opacity(0.95), in: Capsule())
+            .background((colorScheme == .dark ? Color.black : Color.white).opacity(0.95), in: Capsule())
             .shadow(color: .black.opacity(0.16), radius: 3, y: 1)
             .frame(minWidth: 44, minHeight: 44, alignment: .topTrailing)
             .contentShape(Rectangle())
