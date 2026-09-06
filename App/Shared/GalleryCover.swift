@@ -15,6 +15,13 @@ struct GalleryCover: View {
         return media.thumbnails.image(for: url)
     }
 
+    private var imageToLoad: URL? {
+        guard let url, displayedImage == nil,
+              !media.thumbnails.isClearingCache,
+              !media.thumbnails.failures.contains(url) else { return nil }
+        return url
+    }
+
     var body: some View {
         GeometryReader { geometry in
             Group {
@@ -53,13 +60,16 @@ struct GalleryCover: View {
         }
         .onAppear {
             retainImageIfAvailable()
-            if let url { media.thumbnails.enqueue([url]) }
+        }
+        .task(id: imageToLoad) {
+            // A cache miss can occur while the view stays mounted. Do not rely
+            // on onAppear to restart loading after eviction or cache clearing.
+            if let url = imageToLoad { media.thumbnails.enqueue([url]) }
         }
         .onChange(of: url) { _, _ in
             retainedImage = nil
             retainedURL = nil
             retainImageIfAvailable()
-            if let url { media.thumbnails.enqueue([url]) }
         }
         .onChange(of: media.thumbnails.revision) { _, _ in retainImageIfAvailable() }
         .onChange(of: media.thumbnails.cacheGeneration) { _, _ in
