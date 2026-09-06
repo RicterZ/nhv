@@ -16,9 +16,14 @@ struct SearchView: View {
             }
         }
         .navigationTitle("Search")
+        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $input, prompt: "Search galleries")
         .onSubmit(of: .search) { query = input.trimmingCharacters(in: .whitespacesAndNewlines) }
         .onChange(of: input) { _, value in if value.isEmpty { query = "" } }
-        .toolbar { GallerySortPicker(selection: $sort) }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                GallerySortPicker(selection: $sort, iconOnly: true)
+            }
+        }
     }
 }
