@@ -7,17 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A00000000000000000000017 /* NHVCore in Frameworks */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* NHVCore.framework */; };
+		A00000000000000000000017 /* NHVCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* NHVCore.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B00000000000000000000005 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B00000000000000000000004;
+			remoteInfo = NHVCore;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		B00000000000000000000001 /* NHVCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = NHVCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000007 /* NHV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NHV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000001 /* NHVCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = NHVCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A00000000000000000000006 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = App; sourceTree = "<group>"; };
-B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGroup; name = NHVCore; path = Packages/NHVCore/Sources/NHVCore; sourceTree = "<group>"; };
+		B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = NHVCore; path = Packages/NHVCore/Sources/NHVCore; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,7 +35,14 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000017 /* NHVCore in Frameworks */,
+				A00000000000000000000017 /* NHVCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B00000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,15 +80,36 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			);
 			buildRules = (
 			);
-			dependencies = (B00000000000000000000003);
+			dependencies = (
+				B00000000000000000000003 /* PBXTargetDependency */,
+			);
 			fileSystemSynchronizedGroups = (
 				A00000000000000000000006 /* App */,
 			);
 			name = NHV;
-
 			productName = NHV;
 			productReference = A00000000000000000000007 /* NHV.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B00000000000000000000004 /* NHVCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B00000000000000000000006 /* Build configuration list for PBXNativeTarget "NHVCore" */;
+			buildPhases = (
+				B00000000000000000000007 /* Sources */,
+				B00000000000000000000008 /* Frameworks */,
+				B00000000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B00000000000000000000002 /* NHVCore */,
+			);
+			name = NHVCore;
+			productName = NHVCore;
+			productReference = B00000000000000000000001 /* NHVCore.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -92,7 +130,6 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 				"zh-Hans",
 			);
 			mainGroup = A00000000000000000000003;
-
 			productRefGroup = A00000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -111,6 +148,13 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B00000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -121,7 +165,22 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B00000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B00000000000000000000003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B00000000000000000000004 /* NHVCore */;
+			targetProxy = B00000000000000000000005 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000010 /* Debug */ = {
@@ -195,6 +254,36 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			};
 			name = Release;
 		};
+		B0000000000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACH_O_TYPE = staticlib;
+				PRODUCT_BUNDLE_IDENTIFIER = local.nhv.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B0000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACH_O_TYPE = staticlib;
+				PRODUCT_BUNDLE_IDENTIFIER = local.nhv.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -216,58 +305,17 @@ B00000000000000000000002 /* NHVCore */ = {isa = PBXFileSystemSynchronizedRootGro
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B00000000000000000000006 /* Build configuration list for PBXNativeTarget "NHVCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0000000000000000000000A /* Debug */,
+				B0000000000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
-/* Begin native NHVCore target */
-        B00000000000000000000003 = {isa = PBXTargetDependency; target = B00000000000000000000004; targetProxy = B00000000000000000000005; };
-        B00000000000000000000005 = {isa = PBXContainerItemProxy; containerPortal = A00000000000000000000001; proxyType = 1; remoteGlobalIDString = B00000000000000000000004; remoteInfo = NHVCore; };
-        B00000000000000000000004 = {
-            isa = PBXNativeTarget;
-            buildConfigurationList = B00000000000000000000006;
-            buildPhases = (B00000000000000000000007, B00000000000000000000008, B00000000000000000000009);
-            buildRules = ();
-            dependencies = ();
-            fileSystemSynchronizedGroups = (B00000000000000000000002);
-            name = NHVCore;
-            productName = NHVCore;
-            productReference = B00000000000000000000001;
-            productType = "com.apple.product-type.framework";
-        };
-        B00000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-        B00000000000000000000008 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-        B00000000000000000000009 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-        B00000000000000000000006 = {isa = XCConfigurationList; buildConfigurations = (B0000000000000000000000A, B0000000000000000000000B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-        B0000000000000000000000A = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                CODE_SIGN_STYLE = Automatic;
-                DEFINES_MODULE = YES;
-                GENERATE_INFOPLIST_FILE = YES;
-                MACH_O_TYPE = staticlib;
-                PRODUCT_BUNDLE_IDENTIFIER = local.nhv.core;
-                PRODUCT_NAME = "$(TARGET_NAME)";
-                SKIP_INSTALL = YES;
-                SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-                TARGETED_DEVICE_FAMILY = "1,2";
-            };
-            name = Debug;
-        };
-        B0000000000000000000000B = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                CODE_SIGN_STYLE = Automatic;
-                DEFINES_MODULE = YES;
-                GENERATE_INFOPLIST_FILE = YES;
-                MACH_O_TYPE = staticlib;
-                PRODUCT_BUNDLE_IDENTIFIER = local.nhv.core;
-                PRODUCT_NAME = "$(TARGET_NAME)";
-                SKIP_INSTALL = YES;
-                SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-                TARGETED_DEVICE_FAMILY = "1,2";
-            };
-            name = Release;
-        };
-/* End native NHVCore target */
 	};
 	rootObject = A00000000000000000000001 /* Project object */;
 }

@@ -616,6 +616,23 @@
     "NHV": {
       "extractionState": "manual",
       "shouldTranslate": false
+    },
+    "Paste your API key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste your API key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴你的 API Key"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
