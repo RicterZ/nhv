@@ -5,11 +5,17 @@ struct ProfileView: View {
     @Environment(SessionStore.self) private var session
     @Environment(MediaStore.self) private var media
     @Environment(LanguagePreference.self) private var language
+    @Environment(\.locale) private var locale
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var cacheSize: Int64?
+    @State private var isLoadingCacheSize = true
+    @State private var historyCount: Int?
     @State private var showsCacheCleared = false
     @State private var cacheError: (any Error)?
     @State private var showsCacheError = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let user: CurrentUser
+    let api: NHentaiAPI
 
     var body: some View {
         @Bindable var language = language
@@ -40,6 +46,26 @@ struct ProfileView: View {
                 Text("Show only galleries in the selected language on Home and Search.")
             }
             Section {
+                LabeledContent("Current Cache Size") {
+                    if isLoadingCacheSize {
+                        ProgressView()
+                    } else if let cacheSize {
+                        Text(cacheSize, format: .byteCount(style: .file).locale(locale))
+                    } else {
+                        Text("Unavailable")
+                    }
+                }
+                NavigationLink {
+                    BrowsingHistoryView(api: api)
+                } label: {
+                    LabeledContent("Browsing History") {
+                        if let historyCount {
+                            Text(historyCount, format: .number)
+                        } else {
+                            Text("—")
+                        }
+                    }
+                }
                 Button(role: .destructive) {
                     Task {
                         do {
@@ -49,6 +75,7 @@ struct ProfileView: View {
                             cacheError = error
                             showsCacheError = true
                         }
+                        await refreshCacheSize()
                     }
                 } label: {
                     HStack {
@@ -59,6 +86,8 @@ struct ProfileView: View {
                     .foregroundStyle(.red)
                 }
                 .disabled(media.isClearingCache)
+            } header: {
+                Text("Cache")
             }
             Section {
                 LabeledContent("Version", value: appVersion)
@@ -92,6 +121,14 @@ struct ProfileView: View {
         }
         .listSectionSpacing(12)
         .localizedNavigationTitle("Settings")
+        .task { await refreshCacheSize() }
+        .task { await refreshHistoryCount() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await refreshCacheSize() }
+                Task { await refreshHistoryCount() }
+            }
+        }
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
         }
@@ -99,6 +136,24 @@ struct ProfileView: View {
             Button("OK", role: .cancel) {}
         } message: {
             if let cacheError { Text(ErrorMessage.text(for: cacheError)) }
+        }
+    }
+
+    private func refreshHistoryCount() async {
+        do {
+            historyCount = try await BrowsingHistoryStore.shared.entries().count
+        } catch {
+            historyCount = nil
+        }
+    }
+
+    private func refreshCacheSize() async {
+        isLoadingCacheSize = true
+        defer { isLoadingCacheSize = false }
+        do {
+            cacheSize = try await media.imageCacheSize()
+        } catch {
+            cacheSize = nil
         }
     }
 

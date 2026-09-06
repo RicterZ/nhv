@@ -11,6 +11,11 @@ struct SearchView: View {
     @State private var completionRequest: SearchCompletionRequest?
     @State private var history = SearchHistory()
 
+    init(api: NHentaiAPI, initialQuery: String = "") {
+        self.api = api
+        _terms = State(initialValue: SearchTerms.split(initialQuery))
+    }
+
     private var query: String { terms.joined(separator: " ") }
 
     var body: some View {

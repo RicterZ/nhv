@@ -17,6 +17,8 @@ final class ThumbnailStore {
     @ObservationIgnored private var pausedUntil: Date?
     @ObservationIgnored private let session: URLSession
     @ObservationIgnored private let diskCache = ImageDiskCache(namespace: "thumbnails")
+    @ObservationIgnored var references: [URL: GalleryImageReference] = [:]
+    @ObservationIgnored var recover: (@Sendable (GalleryImageReference) async throws -> URL)?
 
     init() {
         cache.totalCostLimit = 48 * 1024 * 1024
@@ -54,6 +56,10 @@ final class ThumbnailStore {
         queue.removeAll()
     }
 
+    func diskCacheSize() async throws -> Int64 {
+        try await diskCache.sizeInBytes()
+    }
+
     func clearCache() async throws {
         guard !isClearingCache else { return }
         isClearingCache = true
@@ -85,9 +91,16 @@ final class ThumbnailStore {
         while let url = queue.next() {
             let session = session
             let diskCache = diskCache
+            let reference = references[url]
+            let recover = recover
             active[url] = Task { [weak self] in
                 do {
-                    let image = try await diskCache.image(for: url, session: session, maximumPixelSize: 600)
+                    let recovery: (@Sendable () async throws -> URL)?
+                    if let reference, let recover {
+                        recovery = { try await recover(reference) }
+                    } else { recovery = nil }
+                    let image = try await diskCache.image(for: url, cacheKey: reference?.cacheKey ?? url.path,
+                        session: session, maximumPixelSize: 600, recover: recovery)
                     try Task.checkCancellation()
                     guard let self else { return }
                     let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0

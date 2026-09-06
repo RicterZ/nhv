@@ -23,7 +23,7 @@ public struct CurrentUser: Decodable, Identifiable, Sendable {
     }
 }
 
-public struct Tag: Decodable, Identifiable, Sendable {
+public struct Tag: Codable, Identifiable, Sendable {
     public let id: Int
     /// Keep server values intact, including future tag types.
     public let type: String
@@ -32,6 +32,18 @@ public struct Tag: Decodable, Identifiable, Sendable {
     public let url: String
     public let count: Int
     public let description: String?
+
+    public var searchQuery: String {
+        let field: String
+        switch type {
+        case "artist", "group", "parody", "character", "language", "category": field = type
+        case "author": field = "artist"
+        default: field = "tag"
+        }
+        let escaped = name.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "\(field):\"\(escaped)\""
+    }
 }
 
 public enum TagType: String, CaseIterable, Sendable {
@@ -66,7 +78,7 @@ public struct PaginatedResponse<Item: Decodable & Sendable>: Decodable, Sendable
     }
 }
 
-public struct CDNConfiguration: Decodable, Sendable {
+public struct CDNConfiguration: Codable, Sendable {
     public let imageServers: [String]
     public let thumbServers: [String]
 }

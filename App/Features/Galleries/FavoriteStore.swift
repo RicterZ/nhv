@@ -14,8 +14,15 @@ final class FavoriteStore {
     private(set) var revision = 0
 
     func remember(id: Int, favorited: Bool?, count: Int?) {
-        guard let favorited, !updating.contains(id) else { return }
-        states[id] = State(favorited: favorited, count: count)
+        guard !updating.contains(id), let favorited = favorited ?? states[id]?.favorited else { return }
+        states[id] = State(favorited: favorited, count: count ?? states[id]?.count)
+    }
+
+    func rememberFromFavoritesList(id: Int, count: Int?) {
+        guard !updating.contains(id) else { return }
+        // List summaries may omit counts (decoded as zero). Never replace a
+        // count learned from a detail or favorite response with that snapshot.
+        states[id] = State(favorited: true, count: states[id]?.count ?? count)
     }
 
     func set(id: Int, favorited: Bool, api: NHentaiAPI) async throws {

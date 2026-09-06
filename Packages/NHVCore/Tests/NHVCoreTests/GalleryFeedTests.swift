@@ -174,7 +174,7 @@ private actor ControlledPages {
     #expect(queue.next() == 21)
 }
 
-@Test(arguments: [GalleryQuery.latest, .favorites("abc"), .search("abc", .week), .tag(42, .popular)])
+@Test(arguments: [GalleryQuery.latest, .favorites("abc"), .search("abc", .week)])
 func collectionQueriesUseServerDefaultPageSize(query: GalleryQuery) async throws {
     let transport = StubTransport(emptyPage)
     _ = try await makeAPI(transport).galleries(matching: query, page: 2)
@@ -186,7 +186,6 @@ func collectionQueriesUseServerDefaultPageSize(query: GalleryQuery) async throws
     case .latest: "/api/v2/galleries"
     case .favorites: "/api/v2/favorites"
     case .search: "/api/v2/search"
-    case .tag: "/api/v2/galleries/tagged"
     }
     #expect(request.url?.path == path)
 }

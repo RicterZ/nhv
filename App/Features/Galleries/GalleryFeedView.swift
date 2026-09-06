@@ -41,19 +41,22 @@ private struct GalleryFeedView<Header: View>: View {
         _feed = State(initialValue: GalleryFeed(
             load: { page in try await api.galleries(matching: query, page: page) },
             willPublish: { items in
-                media.thumbnails.enqueue(items.compactMap { media.thumbnail($0.thumbnail) })
+                media.thumbnails.enqueue(items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
                 if case .favorites = query {
-                    for item in items { favorites.remember(id: item.id, favorited: true, count: item.numFavorites) }
+                    for item in items { favorites.rememberFromFavoritesList(id: item.id, count: item.numFavorites) }
                 }
             }
         ))
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
-
     private var showsFavoriteCount: Bool {
         if case .favorites = query { return false }
         return true
+    }
+
+    private var prefersResultFavoriteCount: Bool {
+        if case .search = query { return true }
+        return false
     }
 
     var body: some View {
@@ -64,17 +67,14 @@ private struct GalleryFeedView<Header: View>: View {
                     Button("Try Again") {
                         Task {
                             await media.prepare(api: api)
-                            media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail) })
+                            media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
                         }
                     }
                 }
 
                 if !feed.items.isEmpty {
-                    LazyVGrid(columns: columns, spacing: 24) {
-                        ForEach(feed.items) { gallery in
-                            GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail), api: api, showsFavoriteCount: showsFavoriteCount)
-                        }
-                    }
+                    GalleryGrid(galleries: feed.items, api: api, showsFavoriteCount: showsFavoriteCount,
+                        prefersResultFavoriteCount: prefersResultFavoriteCount)
                 }
 
                 if let error = feed.error {
@@ -102,7 +102,7 @@ private struct GalleryFeedView<Header: View>: View {
         }
         .task {
             await media.prepare(api: api)
-            media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail) })
+            media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
             if case .favorites = query, favoriteRevision != favorites.revision {
                 await feed.refresh()
             } else {
@@ -122,16 +122,38 @@ private struct GalleryFeedView<Header: View>: View {
     }
 }
 
+struct GalleryGrid: View {
+    let galleries: [GallerySummary]
+    let api: NHentaiAPI
+    let showsFavoriteCount: Bool
+    var recordsBrowsingHistory = true
+    var prefersResultFavoriteCount = false
+    @Environment(MediaStore.self) private var media
+    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 24) {
+            ForEach(galleries) { gallery in
+                GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail, galleryID: gallery.id), api: api,
+                    showsFavoriteCount: showsFavoriteCount, recordsBrowsingHistory: recordsBrowsingHistory,
+                    prefersResultFavoriteCount: prefersResultFavoriteCount)
+            }
+        }
+    }
+}
+
 private struct GalleryCard: View {
     let gallery: GallerySummary
     let url: URL?
     let api: NHentaiAPI
     let showsFavoriteCount: Bool
+    let recordsBrowsingHistory: Bool
+    let prefersResultFavoriteCount: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             NavigationLink {
-                GalleryDetailView(api: api, id: gallery.id)
+                GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
             } label: {
                 GalleryCover(url: url, fillsStandardCoverWidth: true)
                     .frame(maxWidth: .infinity)
@@ -140,7 +162,8 @@ private struct GalleryCard: View {
             }
             .buttonStyle(.plain)
             .overlay(alignment: .topTrailing) {
-                GalleryCardFavoriteButton(gallery: gallery, api: api, showsCount: showsFavoriteCount)
+                GalleryCardFavoriteButton(gallery: gallery, api: api, showsCount: showsFavoriteCount,
+                    prefersResultCount: prefersResultFavoriteCount)
                     .padding(6)
             }
             .overlay(alignment: .bottomTrailing) {
@@ -157,7 +180,7 @@ private struct GalleryCard: View {
             }
 
             NavigationLink {
-                GalleryDetailView(api: api, id: gallery.id)
+                GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
             } label: {
                 GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
                     .font(.subheadline.weight(.medium))

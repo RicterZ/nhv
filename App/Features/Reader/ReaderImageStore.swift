@@ -11,6 +11,8 @@ final class ReaderImageStore {
     @ObservationIgnored private let diskCache = ImageDiskCache(namespace: "pages")
     @ObservationIgnored private let session: URLSession
     private(set) var isClearingCache = false
+    @ObservationIgnored var references: [URL: GalleryImageReference] = [:]
+    @ObservationIgnored var recover: (@Sendable (GalleryImageReference) async throws -> URL)?
 
     init(configuration: URLSessionConfiguration = .ephemeral) {
         configuration.urlCache = nil
@@ -45,6 +47,10 @@ final class ReaderImageStore {
         images.removeAll()
     }
 
+    func diskCacheSize() async throws -> Int64 {
+        try await diskCache.sizeInBytes()
+    }
+
     func clearCache() async throws {
         guard !isClearingCache else { return }
         isClearingCache = true
@@ -60,7 +66,13 @@ final class ReaderImageStore {
         while !Task.isCancelled && wanted.contains(url) {
             var delay = min(30.0, pow(2, Double(min(failures, 5))))
             do {
-                let image = try await diskCache.image(for: url, session: session, maximumPixelSize: 4096)
+                let reference = references[url]
+                let recovery: (@Sendable () async throws -> URL)?
+                if let reference, let recover {
+                    recovery = { try await recover(reference) }
+                } else { recovery = nil }
+                let image = try await diskCache.image(for: url, cacheKey: reference?.cacheKey ?? url.path,
+                    session: session, maximumPixelSize: 4096, recover: recovery)
                 try Task.checkCancellation()
                 guard wanted.contains(url) else { return }
                 images[url] = image
@@ -68,6 +80,16 @@ final class ReaderImageStore {
                 return
             } catch {
                 if Task.isCancelled { return }
+                // A second 404 is terminal for this focus; avoid an endless
+                // metadata-refresh loop for a removed gallery or image.
+                if case .server(status: 404) = error as? APIError {
+                    tasks[url] = nil
+                    return
+                }
+                if case .notFound = error as? APIError {
+                    tasks[url] = nil
+                    return
+                }
                 if case .rateLimited(let retryAfter) = error as? APIError {
                     delay = max(delay, retryAfter ?? 30)
                 }

@@ -9,6 +9,7 @@ import UIKit
 actor ImageDiskCache {
     private let namespace: String
     private var generation = UUID()
+    private var replacementURLs: [String: URL] = [:]
 
     init(namespace: String) { self.namespace = namespace }
 
@@ -23,14 +24,15 @@ actor ImageDiskCache {
         return directory
     }
 
-    private func file(for url: URL) throws -> URL {
-        let key = SHA256.hash(data: Data(url.absoluteString.utf8)).map { String(format: "%02x", $0) }.joined()
+    private func file(for identity: String) throws -> URL {
+        let key = SHA256.hash(data: Data(identity.utf8)).map { String(format: "%02x", $0) }.joined()
         return try directory().appendingPathComponent(key)
     }
 
-    func image(for url: URL, session: URLSession, maximumPixelSize: Int) async throws -> UIImage {
+    func image(for url: URL, cacheKey: String, session: URLSession, maximumPixelSize: Int,
+        recover: (@Sendable () async throws -> URL)? = nil) async throws -> UIImage {
         let operation = generation
-        let file = try? self.file(for: url)
+        let file = try? self.file(for: cacheKey)
         if let file, let data = try? Data(contentsOf: file) {
             if let image = await Self.decode(data, maximumPixelSize: maximumPixelSize) {
                 try Task.checkCancellation()
@@ -44,11 +46,20 @@ actor ImageDiskCache {
         }
 
         try Task.checkCancellation()
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+        var request = URLRequest(url: replacementURLs[cacheKey] ?? url, cachePolicy: .reloadIgnoringLocalCacheData)
         request.setValue(AppConfiguration.userAgent, forHTTPHeaderField: "User-Agent")
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if response.statusCode == 404, let recover {
+            let replacement = try await recover()
+            try Task.checkCancellation()
+            guard operation == generation else { throw CancellationError() }
+            replacementURLs[cacheKey] = replacement
+            // Retry exactly once. No cache probe or metadata refresh on hits.
+            return try await image(for: replacement, cacheKey: cacheKey, session: session,
+                maximumPixelSize: maximumPixelSize)
+        }
         if response.statusCode == 429 {
             throw APIError.rateLimited(retryAfter: Self.retryDelay(response.value(forHTTPHeaderField: "Retry-After")))
         }
@@ -61,8 +72,20 @@ actor ImageDiskCache {
         return image
     }
 
+    func sizeInBytes() throws -> Int64 {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
+        let files = try FileManager.default.contentsOfDirectory(
+            at: directory(), includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]
+        )
+        return try files.reduce(Int64(0)) { total, file in
+            let values = try file.resourceValues(forKeys: keys)
+            return total + (values.isRegularFile == true ? Int64(values.fileSize ?? 0) : 0)
+        }
+    }
+
     func clear() throws {
         generation = UUID()
+        replacementURLs.removeAll()
         let directory = try directory()
         try FileManager.default.removeItem(at: directory)
     }

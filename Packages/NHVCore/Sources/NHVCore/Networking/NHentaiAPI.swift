@@ -63,13 +63,6 @@ public struct NHentaiAPI: Sendable {
         return try await client.send(["tags", "search"], method: "POST", body: body)
     }
 
-    public func galleries(tagID: Int, sort: GallerySort = .date, page: Int = 1, perPage: Int? = nil) async throws -> PaginatedResponse<GallerySummary> {
-        try validateID(tagID)
-        return try await client.send(["galleries", "tagged"], query: pagination(page, perPage: perPage) + [
-            .init(name: "tag_id", value: String(tagID)), .init(name: "sort", value: sort.rawValue)
-        ])
-    }
-
     private func pagination(_ page: Int, perPage: Int? = nil) throws -> [URLQueryItem] {
         guard page >= 1 else { throw APIError.invalidInput(.page) }
         var items = [URLQueryItem(name: "page", value: String(page))]

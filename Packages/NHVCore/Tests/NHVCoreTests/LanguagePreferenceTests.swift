@@ -57,6 +57,5 @@ func languageDefinitionsDriveFiltering(language: AppLanguage) {
     let query = GalleryQuery.latest.filtered(language: language)
     #expect(query == .search("language:\(language.definition.galleryTag)", .date))
     #expect(GalleryQuery.favorites("abc").filtered(language: language) == .favorites("abc"))
-    #expect(GalleryQuery.tag(1, .popular).filtered(language: language) == .tag(1, .popular))
     #expect(!language.definition.nativeName.isEmpty)
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-public struct GallerySummary: Decodable, Identifiable, Sendable {
+public struct GallerySummary: Codable, Identifiable, Sendable {
     public let id: Int
     public let mediaId: String
     public let englishTitle: String
@@ -34,7 +34,7 @@ public struct GallerySummary: Decodable, Identifiable, Sendable {
     }
 }
 
-public struct GalleryDetail: Decodable, Identifiable, Sendable {
+public struct GalleryDetail: Codable, Identifiable, Sendable {
     public let id: Int
     public let mediaId: String
     public let title: GalleryTitle
@@ -71,19 +71,19 @@ public struct GalleryDetail: Decodable, Identifiable, Sendable {
     }
 }
 
-public struct GalleryTitle: Decodable, Sendable {
+public struct GalleryTitle: Codable, Sendable {
     public let english: String
     public let japanese: String?
     public let pretty: String
 }
 
-public struct MediaImage: Decodable, Sendable {
+public struct MediaImage: Codable, Sendable {
     public let path: String
     public let width: Int
     public let height: Int
 }
 
-public struct GalleryPage: Decodable, Identifiable, Sendable {
+public struct GalleryPage: Codable, Identifiable, Sendable {
     public var id: Int { number }
     public let number: Int
     public let path: String

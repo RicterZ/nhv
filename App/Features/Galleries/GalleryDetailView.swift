@@ -1,18 +1,26 @@
 import SwiftUI
 import NHVCore
+import OSLog
 
 struct GalleryDetailView: View {
     let api: NHentaiAPI
-    let id: Int
+    let summary: GallerySummary
+    var recordsBrowsingHistory = true
+    private var id: Int { summary.id }
+    private var galleryURL: URL { URL(string: "https://nhentai.net/g/\(id)/")! }
+    private static let logger = Logger(subsystem: "local.nhv.reader", category: "BrowsingHistory")
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
+    @Environment(AppNavigation.self) private var navigation
     @Environment(\.locale) private var locale
     @State private var gallery: GalleryDetail?
     @State private var error: (any Error)?
     @State private var favoriteError: (any Error)?
     @State private var isLoading = false
+    @State private var hasRecordedVisit = false
     @State private var readerDestination: ReaderDestination?
+    @State private var copyNotification: UUID?
 
     var body: some View {
         ScrollView {
@@ -22,19 +30,19 @@ struct GalleryDetailView: View {
                         InlineErrorView(error: mediaError)
                         Button("Try Again") { Task { await load() } }
                     }
-                    GalleryCover(url: media.thumbnail(gallery.cover.path), retainsLoadedImage: true, letterboxColor: Color(uiColor: .systemBackground))
+                    GalleryCover(url: media.thumbnail(gallery.cover.path, galleryID: id, kind: .cover), retainsLoadedImage: true, letterboxColor: Color(uiColor: .systemBackground))
                         .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
                         .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 8) {
                         GalleryTitleLabel(title: gallery.title.pretty, tagIDs: gallery.tags.map(\.id))
                             .font(.title2.bold())
-                            .textSelection(.enabled)
+                            .modifier(LongPressCopy(value: gallery.title.pretty, actionName: "Copy title", onCopy: showCopied))
                         if let japanese = gallery.title.japanese, !japanese.isEmpty {
                             Text(verbatim: japanese)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
+                                .modifier(LongPressCopy(value: japanese, actionName: "Copy subtitle", onCopy: showCopied))
                         }
                     }
 
@@ -86,8 +94,8 @@ struct GalleryDetailView: View {
                                     .foregroundStyle(.secondary)
                                     .padding(.trailing, 4)
                                 ForEach(gallery.tags.filter { $0.type == type }) { tag in
-                                    NavigationLink {
-                                        TagGalleriesView(api: api, tag: tag)
+                                    Button {
+                                        navigation.openSearch(query: tag.searchQuery)
                                     } label: {
                                         HStack(spacing: 4) {
                                             Text(verbatim: tag.name)
@@ -100,8 +108,9 @@ struct GalleryDetailView: View {
                                         .font(.caption)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 5)
-                                        .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                                        .modifier(GalleryTagAppearance())
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -112,9 +121,9 @@ struct GalleryDetailView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
                             ForEach(Array(gallery.pages.enumerated()), id: \.element.id) { index, page in
                                 Button {
-                                    readerDestination = ReaderDestination(pages: gallery.pages, initialIndex: index)
+                                    readerDestination = ReaderDestination(galleryID: id, pages: gallery.pages, initialIndex: index)
                                 } label: {
-                                    GalleryCover(url: media.thumbnail(page.thumbnail), letterboxColor: Color(uiColor: .systemBackground))
+                                    GalleryCover(url: media.thumbnail(page.thumbnail, galleryID: id, kind: .pageThumbnail(page.number)), letterboxColor: Color(uiColor: .systemBackground))
                                         .aspectRatio(0.7, contentMode: .fit)
                                         .overlay(alignment: .bottomTrailing) {
                                             Text(page.number, format: .number)
@@ -145,29 +154,97 @@ struct GalleryDetailView: View {
         .background(Color(uiColor: .systemBackground))
         .navigationTitle(String(id))
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await load() }
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(verbatim: String(id))
+                    .font(.headline)
+                    .frame(minHeight: 44)
+                    .modifier(LongPressCopy(value: galleryURL.absoluteString, actionName: "Copy link", onCopy: showCopied))
+            }
+            if #available(iOS 26.0, *) {
+                shareToolbarItem.sharedBackgroundVisibility(.hidden)
+            } else {
+                shareToolbarItem
+            }
+        }
+        .refreshable { await load(refresh: true) }
+        .overlay(alignment: .top) {
+            if copyNotification != nil {
+                Label("Copied", systemImage: "checkmark")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial, in: Capsule())
+                    .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                    .padding(.top, 12)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.18), value: copyNotification != nil)
+        .task(id: copyNotification) {
+            guard let notification = copyNotification else { return }
+            do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+            if copyNotification == notification { copyNotification = nil }
+        }
+        .onDisappear { copyNotification = nil }
+        .onAppear {
+            guard recordsBrowsingHistory, !hasRecordedVisit else { return }
+            hasRecordedVisit = true
+            let visitedAt = Date()
+            // Independent of the detail request and its cancellation: even a
+            // failed load or a quick Back action should preserve this visit.
+            Task {
+                do {
+                    try await BrowsingHistoryStore.shared.record(summary, visitedAt: visitedAt)
+                } catch {
+                    Self.logger.error("Unable to save browsing history: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
         .task { if gallery == nil { await load() } }
         .fullScreenCover(item: $readerDestination) { destination in
             ReaderView(destination: destination, api: api)
         }
     }
 
-    private func load() async {
+    private func showCopied() {
+        copyNotification = UUID()
+    }
+
+    private var shareToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            ShareLink(item: galleryURL) {
+                Image(systemName: "square.and.arrow.up")
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Share"))
+        }
+    }
+
+    private func load(refresh: Bool = false) async {
         guard !isLoading else { return }
         isLoading = true
         error = nil
         defer { isLoading = false }
         do {
-            await media.prepare(api: api)
-            let result = try await api.gallery(id: id)
+            let result = try await GalleryDetailCache.shared.gallery(id: id, api: api, refresh: refresh)
             try Task.checkCancellation()
-            media.thumbnails.enqueue(([result.cover.path] + result.pages.prefix(6).map(\.thumbnail)).compactMap { media.thumbnail($0) })
             favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites)
             languages.remember(result.tags)
             gallery = result
-            if result.isFavorited == nil {
-                let state = try await api.favorite(id: id)
-                favorites.remember(id: id, favorited: state.favorited, count: state.numFavorites)
+            await media.prepare(api: api)
+            let cover = media.thumbnail(result.cover.path, galleryID: id, kind: .cover)
+            let pages = result.pages.prefix(6).compactMap {
+                media.thumbnail($0.thumbnail, galleryID: id, kind: .pageThumbnail($0.number))
+            }
+            media.thumbnails.enqueue([cover].compactMap { $0 } + pages)
+            // Account-specific state is refreshed separately without blocking
+            // cached content or turning an offline visit into a detail error.
+            if result.isFavorited == nil, favorites.states[id] == nil,
+               let state = try? await api.favorite(id: id) {
+                favorites.remember(id: id, favorited: state.favorited, count: state.numFavorites ?? result.numFavorites)
             }
         } catch is CancellationError { return }
         catch { self.error = error }

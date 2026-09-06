@@ -9,12 +9,16 @@ An unofficial nhentai iOS client written in Swift for browsing, searching, and m
 - API key sign-in with automatic session restoration.
 - Latest galleries, automatic pagination, and cover preloading in display order.
 - Search and sorting with syntax suggestions, exclusions, removable search terms, and local search history.
-- Gallery details, covers, page previews, and interactive tags for browsing related works.
-- Fullscreen reading from any page, tap or swipe navigation, pinch zoom and reset, next-two-page preloading, and automatic retries.
+- Gallery details, covers, page previews, and tags that open typed queries in the Search tab.
+- Fullscreen reading from any page, tap navigation, pinch zoom, dragging while zoomed, next-two-page preloading, and a first-use tutorial.
 - Favorites browsing, with actions to add or remove favorites.
+- Local browsing history, ordered by last visit with title keyword search. Opening a gallery from history keeps its position unchanged.
+- Native iOS link sharing and long-press copying of titles and gallery URLs.
 - Dark and light themes; English, Simplified Chinese, and Japanese; optional language filtering for Home and Search.
-- Current account information and local image cache cleanup.
-- Persistent disk caching for downloaded images, with bounded in-memory caching. Clear both from Settings.
+- Current account information, cache size, and local cache cleanup in Settings.
+- Persistent caching for gallery details and downloaded images, with bounded image memory caches. Image keys use gallery IDs and image roles; missing image URLs are refreshed once after a 404. Pull down on a detail page to refresh its metadata.
+
+Browsing history stays on the device and is excluded from backups. Clearing the image and detail caches does not remove history; history deletion is not available yet.
 
 ## Build and install
 

@@ -3,11 +3,13 @@ import SwiftUI
 
 struct ReaderDestination: Identifiable {
     let id = UUID()
+    let galleryID: Int
     let pages: [GalleryPage]
     let initialIndex: Int
 }
 
 struct ReaderView: View {
+    let galleryID: Int
     let pages: [GalleryPage]
     let api: NHentaiAPI
     @Environment(MediaStore.self) private var media
@@ -16,14 +18,16 @@ struct ReaderView: View {
     @State private var index: Int
     @State private var isZoomed = false
     @State private var resetID = 0
+    @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
 
     init(destination: ReaderDestination, api: NHentaiAPI) {
+        galleryID = destination.galleryID
         pages = destination.pages
         self.api = api
         _index = State(initialValue: destination.initialIndex)
     }
 
-    private var urls: [URL?] { pages.map { media.image($0.path) } }
+    private var urls: [URL?] { pages.map { media.image($0.path, galleryID: galleryID, page: $0.number) } }
 
     var body: some View {
         ZStack {
@@ -72,6 +76,13 @@ struct ReaderView: View {
         .persistentSystemOverlays(.hidden)
         .accessibilityAction(named: Text("Next page")) { turnPage(1) }
         .accessibilityAction(named: Text("Previous page")) { turnPage(-1) }
+        .allowsHitTesting(hasSeenTutorial)
+        .accessibilityHidden(!hasSeenTutorial)
+        .overlay {
+            if !hasSeenTutorial {
+                ReaderTutorial { hasSeenTutorial = true }
+            }
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else {
                 media.reader.cancel()
@@ -91,6 +102,7 @@ struct ReaderView: View {
     }
 
     private func turnPage(_ delta: Int) {
+        guard hasSeenTutorial else { return }
         let next = index + delta
         guard pages.indices.contains(next) else { return }
         isZoomed = false

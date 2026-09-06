@@ -28,7 +28,7 @@ struct ZoomablePage: UIViewRepresentable {
     }
 }
 
-final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+final class PageScrollView: UIScrollView, UIScrollViewDelegate {
     private let pageImage = UIImageView()
     private var fittedBounds = CGSize.zero
     var resetID = 0
@@ -48,18 +48,7 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
         addSubview(pageImage)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(doubleTapped(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        tap.require(toFail: doubleTap)
         addGestureRecognizer(tap)
-        addGestureRecognizer(doubleTap)
-        for direction: UISwipeGestureRecognizer.Direction in [.left, .right] {
-            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
-            swipe.direction = direction
-            swipe.delegate = self
-            addGestureRecognizer(swipe)
-            panGestureRecognizer.require(toFail: swipe)
-        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -94,11 +83,11 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
 
     private func centerImage() {
         pageImage.center = CGPoint(x: max(bounds.width, contentSize.width) / 2, y: max(bounds.height, contentSize.height) / 2)
-    }
-
-    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        if gestureRecognizer is UISwipeGestureRecognizer { return zoomScale <= 1.01 }
-        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+        // Let the top/bottom of a zoomed page rest near the screen center,
+        // rather than allowing only temporary rubber-band overscroll.
+        let verticalMargin = zoomScale > 1.01 ? bounds.height / 2 : 0
+        let insets = UIEdgeInsets(top: verticalMargin, left: 0, bottom: verticalMargin, right: 0)
+        if contentInset != insets { contentInset = insets }
     }
 
     @objc private func tapped(_ gesture: UITapGestureRecognizer) {
@@ -107,20 +96,4 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
         turnPage?(x < bounds.width / 2 ? -1 : 1)
     }
 
-    @objc private func swiped(_ gesture: UISwipeGestureRecognizer) {
-        turnPage?(gesture.direction == .left ? 1 : -1)
-    }
-
-    @objc private func doubleTapped(_ gesture: UITapGestureRecognizer) {
-        guard pageImage.image != nil else { return }
-        if zoomScale > 1.01 {
-            setZoomScale(1, animated: true)
-        } else {
-            let point = gesture.location(in: pageImage)
-            let size = CGSize(width: bounds.width / 2.5, height: bounds.height / 2.5)
-            zoom(
-                to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2, width: size.width, height: size.height),
-                animated: true)
-        }
-    }
 }
