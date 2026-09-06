@@ -6,6 +6,7 @@ struct ProfileView: View {
     @Environment(MediaStore.self) private var media
     @Environment(LanguagePreference.self) private var language
     @State private var showsCacheCleared = false
+    @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let user: CurrentUser
 
     var body: some View {
@@ -16,6 +17,10 @@ struct ProfileView: View {
                 if !user.about.isEmpty { Text(verbatim: user.about) }
             }
             Section {
+                Picker("Appearance", selection: $theme) {
+                    Text("Dark").tag(AppTheme.dark)
+                    Text("Light").tag(AppTheme.light)
+                }
                 Picker("Language", selection: $language.selection) {
                     ForEach(AppLanguage.allCases, id: \.self) { option in
                         Text(verbatim: option.definition.nativeName).tag(option)
@@ -50,7 +55,7 @@ struct ProfileView: View {
             }
         }
         .listSectionSpacing(12)
-        .navigationTitle("Me")
+        .navigationTitle("Settings")
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
         }

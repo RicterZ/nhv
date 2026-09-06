@@ -95,7 +95,7 @@ private struct GalleryFeedView<Header: View>: View {
             .padding(16)
             .frame(maxWidth: .infinity)
         }
-        .background(Color.black)
+        .background(Color(uiColor: .systemBackground))
         .refreshable {
             await media.prepare(api: api)
             await feed.refresh()
@@ -145,6 +145,7 @@ private struct GalleryCard: View {
                     Spacer(minLength: 0)
                     if gallery.numPages > 0 {
                         Text("\(gallery.numPages) pages")
+                            .foregroundStyle(.white)
                             .font(.caption2.monospacedDigit())
                             .padding(.horizontal, 7)
                             .padding(.vertical, 4)
@@ -165,6 +166,6 @@ private struct GalleryCard: View {
             }
             .buttonStyle(.plain)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
     }
 }

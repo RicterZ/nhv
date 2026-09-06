@@ -6,6 +6,7 @@ struct MainTabView: View {
     @State private var media = MediaStore()
     @State private var favorites = FavoriteStore()
     @State private var languages = GalleryLanguageStore()
+    @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
 
     var body: some View {
         TabView {
@@ -16,13 +17,13 @@ struct MainTabView: View {
             NavigationStack { FavoritesView(api: account.api) }
                 .tabItem { Label("Favorites", systemImage: "heart") }
             NavigationStack { ProfileView(user: account.user) }
-                .tabItem { Label("Me", systemImage: "person.crop.circle") }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .environment(media)
         .environment(favorites)
         .environment(languages)
         .tint(Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255))
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(theme.colorScheme)
         .onDisappear { media.thumbnails.cancel() }
     }
 }

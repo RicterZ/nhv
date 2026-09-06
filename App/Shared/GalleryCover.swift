@@ -35,7 +35,7 @@ struct GalleryCover: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
         }
-        .background(Color.white.opacity(0.04))
+        .background(Color.primary.opacity(0.04))
         .contextMenu {
             if let url, media.thumbnails.failures.contains(url) {
                 Button("Try Again") { media.thumbnails.retry(url) }

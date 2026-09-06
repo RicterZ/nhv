@@ -23,7 +23,7 @@ struct GalleryBrowsePage<Content: View>: View {
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color.black)
+        .background(Color(uiColor: .systemBackground))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

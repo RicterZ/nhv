@@ -115,6 +115,7 @@ struct GalleryDetailView: View {
                                     .aspectRatio(0.7, contentMode: .fit)
                                     .overlay(alignment: .bottomTrailing) {
                                         Text(page.number, format: .number)
+                                            .foregroundStyle(.white)
                                             .font(.caption2.monospacedDigit())
                                             .padding(4)
                                             .background(.black.opacity(0.8))
@@ -135,7 +136,7 @@ struct GalleryDetailView: View {
                 ProgressView("Loading gallery…").padding(32)
             }
         }
-        .background(Color.black)
+        .background(Color(uiColor: .systemBackground))
         .navigationTitle(String(id))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }
