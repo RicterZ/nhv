@@ -3,11 +3,12 @@ import NHVCore
 
 struct FavoritesView: View {
     let api: NHentaiAPI
+    let preloaded: FavoritesFeedStore
     @State private var input = ""
     @State private var query = ""
 
     var body: some View {
-        GalleryCollectionView(api: api, query: .favorites(query))
+        GalleryCollectionView(api: api, query: .favorites(query), preloadedFavorites: query.isEmpty ? preloaded : nil)
             .localizedNavigationTitle("Favorites")
             .searchable(text: $input, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search favorites")
             .onSubmit(of: .search) { query = input.trimmingCharacters(in: .whitespacesAndNewlines) }

@@ -5,6 +5,7 @@ struct ZoomablePage: UIViewRepresentable {
     let image: UIImage?
     let resetID: Int
     @Binding var isZoomed: Bool
+    var pageTurnMode = PageTurnMode.tap
     let turnPage: (Int) -> Void
 
     func makeUIView(context: Context) -> PageScrollView {
@@ -15,6 +16,7 @@ struct ZoomablePage: UIViewRepresentable {
 
     func updateUIView(_ view: PageScrollView, context: Context) {
         view.turnPage = turnPage
+        view.pageTurnMode = pageTurnMode
         view.zoomChanged = { zoomed in
             DispatchQueue.main.async {
                 if isZoomed != zoomed { isZoomed = zoomed }
@@ -34,6 +36,14 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
     var resetID = 0
     var turnPage: ((Int) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
+    private var pageTap: UITapGestureRecognizer!
+    var pageTurnMode = PageTurnMode.tap {
+        didSet {
+            guard oldValue != pageTurnMode else { return }
+            pageTap.isEnabled = pageTurnMode == .tap
+            updatePanning()
+        }
+    }
 
     init() {
         super.init(frame: .zero)
@@ -48,7 +58,9 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
         addSubview(pageImage)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
+        pageTap = tap
         addGestureRecognizer(tap)
+
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -78,6 +90,7 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         centerImage()
+        updatePanning()
         zoomChanged?(zoomScale > 1.01)
     }
 
@@ -91,9 +104,14 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
     }
 
     @objc private func tapped(_ gesture: UITapGestureRecognizer) {
-        guard zoomScale <= 1.01 else { return }
+        guard pageTurnMode == .tap, zoomScale <= 1.01, !isZooming else { return }
         let x = gesture.location(in: self).x - bounds.minX
         turnPage?(x < bounds.width / 2 ? -1 : 1)
     }
 
+    private func updatePanning() {
+        // At fit scale, the outer pager owns one-finger drags. Pinch zoom stays
+        // available; once enlarged, this scroll view owns image dragging.
+        panGestureRecognizer.isEnabled = pageTurnMode == .tap || zoomScale > 1.01
+    }
 }

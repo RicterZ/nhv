@@ -18,6 +18,20 @@ public struct GallerySummary: Codable, Identifiable, Sendable {
         case numPages, numFavorites, tagIds, blacklisted
     }
 
+    public init(detail: GalleryDetail) {
+        id = detail.id
+        mediaId = detail.mediaId
+        englishTitle = detail.title.english
+        japaneseTitle = detail.title.japanese
+        thumbnail = detail.thumbnail.path
+        thumbnailWidth = detail.thumbnail.width
+        thumbnailHeight = detail.thumbnail.height
+        numPages = detail.numPages
+        numFavorites = detail.numFavorites
+        tagIds = detail.tags.map(\.id)
+        blacklisted = false
+    }
+
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         id = try values.decode(Int.self, forKey: .id)

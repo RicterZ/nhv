@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReaderTutorial: View {
+    var pageTurnMode = PageTurnMode.tap
     let dismiss: () -> Void
 
     var body: some View {
@@ -16,12 +17,14 @@ struct ReaderTutorial: View {
                         .accessibilityAddTraits(.isHeader)
 
                     HStack(alignment: .top, spacing: 0) {
-                        pageHint(title: "Previous page", caption: "Tap the left half", icon: "hand.point.up.left", arrow: "arrow.left")
+                        pageHint(title: "Previous page", caption: pageTurnMode == .tap ? "Tap the left half" : "Swipe right",
+                            icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.left" : "arrow.right")
                         Rectangle()
                             .fill(.white.opacity(0.25))
                             .frame(width: 1, height: 120)
                             .accessibilityHidden(true)
-                        pageHint(title: "Next page", caption: "Tap the right half", icon: "hand.point.up.left", arrow: "arrow.right")
+                        pageHint(title: "Next page", caption: pageTurnMode == .tap ? "Tap the right half" : "Swipe left",
+                            icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.right" : "arrow.left")
                     }
                     .padding(.vertical, 12)
 

@@ -16,6 +16,7 @@ struct LongPressCopy: ViewModifier {
 
     private func copy() {
         UIPasteboard.general.string = value
+        ClipboardGallery.ignoreCurrentContent()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         onCopy()
     }

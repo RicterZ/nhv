@@ -38,6 +38,7 @@ struct SearchSyntaxSuggestions: View {
 
     private func description(for id: String) -> Text {
         switch id {
+        case "id": Text("Open gallery by ID")
         case "tag": Text("Filter by tag")
         case "artist": Text("Filter by artist")
         case "parody": Text("Filter by parody")

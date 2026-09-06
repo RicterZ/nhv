@@ -17,6 +17,8 @@ struct ProfileView: View {
     @State private var showsSignOutConfirmation = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
+    @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
+    @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
     let user: CurrentUser
     let api: NHentaiAPI
 
@@ -51,6 +53,13 @@ struct ProfileView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                Picker("Page Turn Method", selection: $pageTurnMode) {
+                    Text("Tap Left or Right").tag(PageTurnMode.tap)
+                    Text("Swipe Left or Right").tag(PageTurnMode.swipe)
+                }
+                .tint(theme.accentColor)
+                .id("page-turn-\(theme.rawValue)")
+                Toggle("Read Clipboard", isOn: $readsClipboard)
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
                 }
@@ -132,17 +141,23 @@ struct ProfileView: View {
                 Task { await refreshHistoryCount() }
             }
         }
-        .alert("Clear cached data?", isPresented: $showsClearCacheConfirmation) {
-            Button("Clear Cache", role: .destructive) { Task { await clearCache() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Cached images and gallery details will be removed. Browsing history will be kept.")
-        }
-        .alert("Sign out?", isPresented: $showsSignOutConfirmation) {
-            Button("Sign Out", role: .destructive) { session.signOut() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("You will need your API key to sign in again.")
+        .background {
+            // Scope the blue cancel tint to these two confirmations only.
+            // Destructive actions retain their system red appearance.
+            Color.clear
+                .alert("Clear cached data?", isPresented: $showsClearCacheConfirmation) {
+                    Button("Clear Cache", role: .destructive) { Task { await clearCache() } }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Cached images and gallery details will be removed. Browsing history will be kept.")
+                }
+                .alert("Sign out?", isPresented: $showsSignOutConfirmation) {
+                    Button("Sign Out", role: .destructive) { session.signOut() }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("You will need your API key to sign in again.")
+                }
+                .tint(Color(uiColor: .systemBlue))
         }
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}

@@ -4,9 +4,9 @@ import OSLog
 
 struct GalleryDetailView: View {
     let api: NHentaiAPI
-    let summary: GallerySummary
+    let summary: GallerySummary?
     var recordsBrowsingHistory = true
-    private var id: Int { summary.id }
+    let id: Int
     private var galleryURL: URL { URL(string: "https://nhentai.net/g/\(id)/")! }
     private static let logger = Logger(subsystem: "local.nhv.reader", category: "BrowsingHistory")
     @Environment(MediaStore.self) private var media
@@ -21,6 +21,20 @@ struct GalleryDetailView: View {
     @State private var hasRecordedVisit = false
     @State private var readerDestination: ReaderDestination?
     @State private var copyNotification: UUID?
+    @State private var openedAt = Date()
+
+    init(api: NHentaiAPI, summary: GallerySummary, recordsBrowsingHistory: Bool = true) {
+        self.api = api
+        self.summary = summary
+        self.id = summary.id
+        self.recordsBrowsingHistory = recordsBrowsingHistory
+    }
+
+    init(api: NHentaiAPI, id: Int) {
+        self.api = api
+        self.id = id
+        self.summary = nil
+    }
 
     var body: some View {
         ScrollView {
@@ -189,7 +203,7 @@ struct GalleryDetailView: View {
         }
         .onDisappear { copyNotification = nil }
         .onAppear {
-            guard recordsBrowsingHistory, !hasRecordedVisit else { return }
+            guard let summary, recordsBrowsingHistory, !hasRecordedVisit else { return }
             hasRecordedVisit = true
             let visitedAt = Date()
             // Independent of the detail request and its cancellation: even a
@@ -234,6 +248,14 @@ struct GalleryDetailView: View {
             favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites)
             languages.remember(result.tags)
             gallery = result
+            if summary == nil, recordsBrowsingHistory, !hasRecordedVisit {
+                hasRecordedVisit = true
+                let visitedAt = openedAt
+                Task {
+                    do { try await BrowsingHistoryStore.shared.record(GallerySummary(detail: result), visitedAt: visitedAt) }
+                    catch { Self.logger.error("Unable to save browsing history: \(error.localizedDescription, privacy: .public)") }
+                }
+            }
             await media.prepare(api: api)
             let cover = media.thumbnail(result.cover.path, galleryID: id, kind: .cover)
             let pages = result.pages.prefix(6).compactMap {

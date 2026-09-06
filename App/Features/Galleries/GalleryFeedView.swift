@@ -4,21 +4,22 @@ import NHVCore
 struct GalleryCollectionView<Header: View>: View {
     let api: NHentaiAPI
     let query: GalleryQuery
+    var preloadedFavorites: FavoritesFeedStore? = nil
     @ViewBuilder var header: () -> Header
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
 
     var body: some View {
-        GalleryFeedView(api: api, query: query, media: media, favorites: favorites, header: header)
+        GalleryFeedView(api: api, query: query, media: media, favorites: favorites, preloadedFavorites: preloadedFavorites, header: header)
             .id(query)
             .task { await languages.prepare(api: api) }
     }
 }
 
 extension GalleryCollectionView where Header == EmptyView {
-    init(api: NHentaiAPI, query: GalleryQuery) {
-        self.init(api: api, query: query, header: { EmptyView() })
+    init(api: NHentaiAPI, query: GalleryQuery, preloadedFavorites: FavoritesFeedStore? = nil) {
+        self.init(api: api, query: query, preloadedFavorites: preloadedFavorites, header: { EmptyView() })
     }
 }
 
@@ -28,18 +29,21 @@ private struct GalleryFeedView<Header: View>: View {
     let favorites: FavoriteStore
     let query: GalleryQuery
     let header: () -> Header
+    let preloadedFavorites: FavoritesFeedStore?
     @State private var feed: GalleryFeed
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
     @State private var selectedGallery: GallerySummary?
 
-    init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore, @ViewBuilder header: @escaping () -> Header) {
+    init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore,
+         preloadedFavorites: FavoritesFeedStore? = nil, @ViewBuilder header: @escaping () -> Header) {
         self.api = api
         self.media = media
         self.favorites = favorites
         self.query = query
         self.header = header
-        _feed = State(initialValue: GalleryFeed(
+        self.preloadedFavorites = preloadedFavorites
+        _feed = State(initialValue: preloadedFavorites?.feed ?? GalleryFeed(
             load: { page in try await api.galleries(matching: query, page: page) },
             willPublish: { items in
                 media.thumbnails.enqueue(items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
@@ -111,6 +115,10 @@ private struct GalleryFeedView<Header: View>: View {
             await feed.refresh()
         }
         .task {
+            if let preloadedFavorites {
+                await preloadedFavorites.prepare()
+                return
+            }
             await media.prepare(api: api)
             media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
             if case .favorites = query, favoriteRevision != favorites.revision {
@@ -122,7 +130,7 @@ private struct GalleryFeedView<Header: View>: View {
         }
         .onDisappear {
             nextPageTask?.cancel()
-            feed.cancel()
+            if preloadedFavorites == nil { feed.cancel() }
         }
     }
 

@@ -6,6 +6,7 @@ public struct SearchSyntax: Identifiable, Sendable, Equatable {
     public let example: String
 
     public static let all: [SearchSyntax] = [
+        .init(id: "id", insertion: "id:", example: "id:123456"),
         .init(id: "tag", insertion: "tag:\"\"", example: "tag:\"name\""),
         .init(id: "artist", insertion: "artist:\"\"", example: "artist:\"name\""),
         .init(id: "parody", insertion: "parody:\"\"", example: "parody:\"name\""),
@@ -25,7 +26,10 @@ public struct SearchSyntax: Identifiable, Sendable, Equatable {
         let fragment = input[tokenStart(in: input)...]
         let prefix = fragment.hasPrefix("-") ? fragment.dropFirst() : fragment[...]
         guard !prefix.contains(":"), !prefix.contains("\"") else { return [] }
-        return all.filter { prefix.isEmpty || $0.insertion.hasPrefix(prefix.lowercased()) }
+        return all.filter {
+            ($0.id != "id" || !fragment.hasPrefix("-")) &&
+            (prefix.isEmpty || $0.insertion.hasPrefix(prefix.lowercased()))
+        }
     }
 
     public func applying(to input: String) -> String {

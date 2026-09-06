@@ -10,6 +10,8 @@ struct SearchView: View {
     @State private var isSearchPresented = false
     @State private var completionRequest: SearchCompletionRequest?
     @State private var history = SearchHistory()
+    @State private var directGalleryID: Int?
+    @State private var showsInvalidID = false
 
     init(api: NHentaiAPI, initialQuery: String = "") {
         self.api = api
@@ -19,7 +21,9 @@ struct SearchView: View {
     private var query: String { terms.joined(separator: " ") }
 
     var body: some View {
-        Group {
+        // Keep the search controller and its accessory attached to one stable
+        // container when focus or sorting replaces the content underneath.
+        ZStack {
             if isSearchPresented {
                 GalleryScrollView(header: { filters }) {
                     searchHistory
@@ -48,7 +52,20 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
         .modifier(SearchCompletionSelection(request: completionRequest))
+        .background(SearchSortAccessory(selection: $sort, text: $input).frame(width: 0, height: 0))
+        .navigationDestination(isPresented: Binding(
+            get: { directGalleryID != nil },
+            set: { if !$0 { directGalleryID = nil } }
+        )) {
+            if let directGalleryID { GalleryDetailView(api: api, id: directGalleryID) }
+        }
+        .alert("Invalid gallery ID", isPresented: $showsInvalidID) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Use id: followed by a positive number using only 0–9, without other search terms.")
+        }
         .onSubmit(of: .search) {
+            if openDirectGallery(input) { return }
             for term in SearchTerms.split(input) where !terms.contains(term) {
                 terms.append(term)
             }
@@ -61,6 +78,7 @@ struct SearchView: View {
 
     private var searchHistory: some View {
         SearchHistoryView(history: history) { query in
+            if openDirectGallery(query) { return }
             terms = SearchTerms.split(query)
             history.record(query)
             input = ""
@@ -69,9 +87,25 @@ struct SearchView: View {
         }
     }
 
-    private var filters: some View {
-        SearchTermChips(terms: terms, sort: $sort) { term in
-            terms.removeAll { $0 == term }
+    private func openDirectGallery(_ text: String) -> Bool {
+        do {
+            guard let id = try GalleryLink.id(in: text) ?? SearchTerms.directGalleryID(in: text) else { return false }
+            history.record("id:\(id)")
+            input = ""
+            completionRequest = nil
+            isSearchPresented = false
+            directGalleryID = id
+        } catch {
+            showsInvalidID = true
+        }
+        return true
+    }
+
+    @ViewBuilder private var filters: some View {
+        if !terms.isEmpty {
+            SearchTermChips(terms: terms) { term in
+                terms.removeAll { $0 == term }
+            }
         }
     }
 }

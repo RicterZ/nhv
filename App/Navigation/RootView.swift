@@ -17,7 +17,7 @@ struct RootView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             if case .authenticated(let account) = session.phase {
-                MainTabView(account: account)
+                MainTabView(account: account, isReady: isReady)
                     .id(account.id)
                     .opacity(isReady ? 1 : 0)
                     .allowsHitTesting(isReady)

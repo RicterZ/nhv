@@ -4,7 +4,7 @@ import Testing
 @Test func staticSyntaxMatchesPrefixAndSupportsExclusion() {
     #expect(SearchSyntax.suggestions(for: "art").map(\.id) == ["artist"])
     #expect(SearchSyntax.suggestions(for: "-art").map(\.id) == ["artist"])
-    #expect(SearchSyntax.suggestions(for: "-").count == SearchSyntax.all.count)
+    #expect(SearchSyntax.suggestions(for: "-").count == SearchSyntax.all.count - 1)
     #expect(SearchSyntax.suggestions(for: "pages:>20").isEmpty)
     #expect(SearchSyntax.suggestions(for: "unrelated").isEmpty)
 }

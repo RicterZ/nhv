@@ -24,10 +24,11 @@ final class ReaderImageStore {
         session = URLSession(configuration: configuration)
     }
 
-    /// Register the visible page first, followed by exactly the next two pages.
+    /// Load the visible page first, then neighbors for interactive paging.
     func focus(on index: Int, urls: [URL?]) {
         guard !isClearingCache, urls.indices.contains(index) else { return }
-        let requested = urls[index..<min(urls.count, index + 3)].compactMap { $0 }
+        var requested = urls[index..<min(urls.count, index + 3)].compactMap { $0 }
+        if index > 0, let previous = urls[index - 1] { requested.append(previous) }
         wanted = Set(requested)
         for url in Array(tasks.keys) where !wanted.contains(url) {
             tasks.removeValue(forKey: url)?.cancel()
@@ -40,10 +41,15 @@ final class ReaderImageStore {
         }
     }
 
-    func cancel() {
+    /// Stop background work without changing the displayed image or its zoom.
+    func pause() {
         tasks.values.forEach { $0.cancel() }
         tasks.removeAll()
         wanted.removeAll()
+    }
+
+    func cancel() {
+        pause()
         images.removeAll()
     }
 

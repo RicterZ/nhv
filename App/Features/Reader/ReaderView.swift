@@ -13,12 +13,14 @@ struct ReaderView: View {
     let pages: [GalleryPage]
     let api: NHentaiAPI
     @Environment(MediaStore.self) private var media
+    @Environment(AppNavigation.self) private var navigation
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var index: Int
     @State private var isZoomed = false
     @State private var resetID = 0
     @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
+    @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
 
     init(destination: ReaderDestination, api: NHentaiAPI) {
         galleryID = destination.galleryID
@@ -32,11 +34,20 @@ struct ReaderView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            let url = urls.indices.contains(index) ? urls[index] : nil
-            ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed, turnPage: turnPage)
-                .ignoresSafeArea()
-            if url.flatMap({ media.reader.images[$0] }) == nil {
-                ProgressView().tint(.white).allowsHitTesting(false)
+            let pageURLs = urls
+            let url = pageURLs.indices.contains(index) ? pageURLs[index] : nil
+            if pageTurnMode == .swipe {
+                PagedReaderView(images: pageURLs.map { $0.flatMap { media.reader.images[$0] } },
+                    index: index, resetID: resetID, isZoomed: $isZoomed,
+                    selectPage: { turnPage($0 - index) })
+                    .ignoresSafeArea()
+            } else {
+                ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed,
+                    pageTurnMode: pageTurnMode, turnPage: turnPage)
+                    .ignoresSafeArea()
+                if url.flatMap({ media.reader.images[$0] }) == nil {
+                    ProgressView().tint(.white).allowsHitTesting(false)
+                }
             }
         }
         .overlay(alignment: .topLeading) {
@@ -80,12 +91,12 @@ struct ReaderView: View {
         .accessibilityHidden(!hasSeenTutorial)
         .overlay {
             if !hasSeenTutorial {
-                ReaderTutorial { hasSeenTutorial = true }
+                ReaderTutorial(pageTurnMode: pageTurnMode) { hasSeenTutorial = true }
             }
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else {
-                media.reader.cancel()
+                media.reader.pause()
                 return
             }
             while media.resolver == nil && !Task.isCancelled {
@@ -98,7 +109,11 @@ struct ReaderView: View {
             media.reader.focus(on: index, urls: urls)
         }
         .onChange(of: index) { _, _ in media.reader.focus(on: index, urls: urls) }
-        .onDisappear { media.reader.cancel() }
+        .onAppear { navigation.isReading = true }
+        .onDisappear {
+            media.reader.cancel()
+            navigation.isReading = false
+        }
     }
 
     private func turnPage(_ delta: Int) {
