@@ -10,10 +10,13 @@
       }
     },
     "%lld / %lld" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld / %2$lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld / %2$lld" } },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$lld / %2$lld"
           }
         }

@@ -91,7 +91,7 @@ struct ProfileView: View {
             }
         }
         .listSectionSpacing(12)
-        .navigationTitle("Settings")
+        .localizedNavigationTitle("Settings")
         .alert("Cache Cleared", isPresented: $showsCacheCleared) {
             Button("OK", role: .cancel) {}
         }

@@ -5,6 +5,7 @@ struct GalleryCover: View {
     let url: URL?
     var fillsStandardCoverWidth = false
     var retainsLoadedImage = false
+    var letterboxColor: Color = .white
     @Environment(MediaStore.self) private var media
     @State private var retainedImage: UIImage?
     @State private var retainedURL: URL?
@@ -37,7 +38,7 @@ struct GalleryCover: View {
                         }
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
-                    .background(Color.white)
+                    .background(letterboxColor)
                     .clipped()
                 } else if let url, media.thumbnails.failures.contains(url) {
                     VStack(spacing: 8) {

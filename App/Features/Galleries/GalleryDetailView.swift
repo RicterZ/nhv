@@ -22,7 +22,7 @@ struct GalleryDetailView: View {
                         InlineErrorView(error: mediaError)
                         Button("Try Again") { Task { await load() } }
                     }
-                    GalleryCover(url: media.thumbnail(gallery.cover.path), retainsLoadedImage: true)
+                    GalleryCover(url: media.thumbnail(gallery.cover.path), retainsLoadedImage: true, letterboxColor: Color(uiColor: .systemBackground))
                         .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
                         .frame(maxWidth: .infinity)
 
@@ -114,7 +114,7 @@ struct GalleryDetailView: View {
                                 Button {
                                     readerDestination = ReaderDestination(pages: gallery.pages, initialIndex: index)
                                 } label: {
-                                    GalleryCover(url: media.thumbnail(page.thumbnail))
+                                    GalleryCover(url: media.thumbnail(page.thumbnail), letterboxColor: Color(uiColor: .systemBackground))
                                         .aspectRatio(0.7, contentMode: .fit)
                                         .overlay(alignment: .bottomTrailing) {
                                             Text(page.number, format: .number)

@@ -7,6 +7,6 @@ struct HomeView: View {
 
     var body: some View {
         GalleryCollectionView(api: api, query: language.applyingFilter(to: .latest))
-            .navigationTitle("Home")
+            .localizedNavigationTitle("Home")
     }
 }

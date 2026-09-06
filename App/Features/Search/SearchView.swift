@@ -38,7 +38,7 @@ struct SearchView: View {
         .scrollDismissesKeyboard(.interactively)
         .scrollBounceBehavior(.always)
         .background(Color(uiColor: .systemBackground))
-        .navigationTitle("Search")
+        .localizedNavigationTitle("Search")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
         .modifier(SearchCompletionSelection(request: completionRequest))
