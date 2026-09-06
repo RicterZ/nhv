@@ -1,6 +1,22 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Search History": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search History" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "搜索历史" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "検索履歴" } }
+      }
+    },
+    "Clear History": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear History" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清空历史" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "履歴を消去" } }
+      }
+    },
     "API Key": {
       "extractionState": "manual",
       "localizations": {

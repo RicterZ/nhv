@@ -11,36 +11,14 @@ struct SearchCompletionSelection: ViewModifier {
     let request: SearchCompletionRequest?
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.modifier(NativeSearchSelection(request: request))
-        } else {
-            content.background(LegacySearchSelection(request: request).frame(width: 0, height: 0))
-        }
-    }
-}
-
-@available(iOS 26.0, *)
-private struct NativeSearchSelection: ViewModifier {
-    let request: SearchCompletionRequest?
-    @State private var selection: TextSelection?
-
-    func body(content: Content) -> some View {
         content
-            .searchSelection($selection)
-            .onChange(of: request) { _, request in
-                guard let completion = request?.completion else {
-                    selection = nil
-                    return
-                }
-                let index = String.Index(utf16Offset: completion.caretUTF16Offset, in: completion.text)
-                selection = TextSelection(insertionPoint: index)
-            }
+            .background(SearchCaretPlacement(request: request).frame(width: 0, height: 0))
     }
 }
 
-/// iOS 17–18 do not expose selection for SwiftUI's system search field.
-/// Resolve only this screen's navigation search controller and keep its native behavior.
-private struct LegacySearchSelection: UIViewControllerRepresentable {
+/// Apply a completion once to the current field. Persisting SwiftUI TextSelection
+/// indices can trap when searchable clears or replaces its text on iOS 26.
+private struct SearchCaretPlacement: UIViewControllerRepresentable {
     let request: SearchCompletionRequest?
 
     func makeUIViewController(context: Context) -> SelectionController { SelectionController() }
@@ -67,6 +45,7 @@ private struct LegacySearchSelection: UIViewControllerRepresentable {
                     ?? controller.navigationController?.topViewController?.navigationItem.searchController
                 if let field = search?.searchBar.searchTextField,
                    field.isFirstResponder, field.text == request.completion.text,
+                   (0...request.completion.text.utf16.count).contains(request.completion.caretUTF16Offset),
                    let position = field.position(from: field.beginningOfDocument, offset: request.completion.caretUTF16Offset) {
                     field.selectedTextRange = field.textRange(from: position, to: position)
                     appliedID = request.id
