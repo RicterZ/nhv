@@ -1,15 +1,45 @@
 import NHVCore
 import SwiftUI
 
-enum LoginPresentation {
-    static let minimumDuration: Duration = .seconds(2.4)
+@MainActor @Observable
+final class LoginPresentation {
+    private static let cycle = 2.4
+    private(set) var startedAt = Date()
+    private(set) var finishesAt: Date?
+    private(set) var isActive = false
+
+    func begin() {
+        startedAt = Date()
+        finishesAt = nil
+        isActive = true
+    }
+
+    func displacement(at date: Date) -> Double {
+        guard isActive else { return 0 }
+        if let finishesAt, date >= finishesAt { return 0 }
+        let elapsed = max(0, date.timeIntervalSince(startedAt))
+        // Zero displacement and velocity at both ends of every cycle.
+        return -10 * (1 - cos(2 * .pi * elapsed / Self.cycle))
+    }
+
+    func finish() async throws {
+        let start = startedAt
+        let elapsed = max(0, Date().timeIntervalSince(start))
+        let cycles = max(1, ceil(elapsed / Self.cycle))
+        let end = start.addingTimeInterval(cycles * Self.cycle)
+        finishesAt = end
+        // Hold the resting frame briefly before replacing the screen.
+        try await Task.sleep(for: .seconds(max(0, end.timeIntervalSinceNow) + 0.12))
+        guard startedAt == start else { return }
+        isActive = false
+    }
 }
 
 struct SignInView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(LoginPresentation.self) private var presentation
     @State private var apiKey = ""
-    @State private var animationStart = Date()
     @State private var isSubmitting = false
 
     @FocusState private var isKeyFocused: Bool
@@ -18,7 +48,7 @@ struct SignInView: View {
     private var isAuthenticating: Bool {
         switch session.phase {
         case .restoring, .authenticated: true
-        default: session.isBusy || isSubmitting
+        default: session.isBusy || isSubmitting || presentation.isActive
         }
     }
 
@@ -28,8 +58,7 @@ struct SignInView: View {
                 Color.black.ignoresSafeArea()
 
                 TimelineView(.animation(paused: !isAuthenticating || reduceMotion)) { timeline in
-                    let elapsed = timeline.date.timeIntervalSince(animationStart)
-                    let displacement = isAuthenticating && !reduceMotion ? -10 * sin(elapsed * .pi / 1.2) : 0
+                    let displacement = reduceMotion ? 0 : presentation.displacement(at: timeline.date)
                     Image("NHentaiLogo")
                         .resizable()
                         .scaledToFit()
@@ -112,9 +141,6 @@ struct SignInView: View {
             .allowsHitTesting(!isAuthenticating)
             .accessibilityHidden(isAuthenticating)
         }
-        .onChange(of: isAuthenticating) { _, active in
-            if active { animationStart = Date() }
-        }
         .foregroundStyle(.white)
         .tint(.white)
         .preferredColorScheme(.dark)
@@ -123,14 +149,14 @@ struct SignInView: View {
     private func signIn() {
         guard !isAuthenticating else { return }
         isKeyFocused = false
+        presentation.begin()
         isSubmitting = true
         Task {
             await session.signIn(key: apiKey)
             if case .authenticated = session.phase {
                 apiKey = ""
             } else {
-                // Match the successful login's 2.4-second preparation screen.
-                try? await Task.sleep(for: LoginPresentation.minimumDuration)
+                try? await presentation.finish()
             }
             isSubmitting = false
         }
