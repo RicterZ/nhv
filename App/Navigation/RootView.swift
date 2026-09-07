@@ -66,12 +66,6 @@ struct RootView: View {
             else { readyAccountID = nil }
         }
         .task {
-            #if DEBUG
-            if LoginAnimationPreview.enabled {
-                await session.restore()
-                return
-            }
-            #endif
             await restore()
         }
         .task(id: isReturningToLogin) {
