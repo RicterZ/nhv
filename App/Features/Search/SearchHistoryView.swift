@@ -28,16 +28,11 @@ struct SearchHistoryView: View {
                         Button {
                             isExpanded.toggle()
                         } label: {
-                            Label {
-                                if isExpanded { Text("Collapse") } else { Text("Expand") }
-                            } icon: {
-                                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            }
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .frame(minHeight: 44)
-                            .contentShape(Rectangle())
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
                         }
+                        .accessibilityLabel(isExpanded ? Text("Collapse") : Text("Expand"))
                         .accessibilityIdentifier("searchHistory.expand")
                     }
                     .font(.subheadline)
