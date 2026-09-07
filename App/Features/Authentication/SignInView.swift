@@ -3,13 +3,18 @@ import SwiftUI
 
 @MainActor @Observable
 final class LoginPresentation {
+    static let travelDuration = 0.6
+    static let initialTravelDuration = 0.9
     private static let cycle = 2.4
     private(set) var startedAt = Date()
     private(set) var finishesAt: Date?
     private(set) var isActive = false
+    private(set) var startsFromInput = false
 
-    func begin() {
-        startedAt = Date()
+    func begin(reduceMotion: Bool = false, fromInput: Bool = false) {
+        startsFromInput = fromInput
+        let duration = fromInput ? Self.initialTravelDuration : Self.travelDuration
+        startedAt = Date().addingTimeInterval(reduceMotion ? 0 : duration)
         finishesAt = nil
         isActive = true
     }
@@ -38,60 +43,58 @@ final class LoginPresentation {
 /// One persistent logo moves between the login and error layouts.
 struct SessionLogoView: View {
     let showsError: Bool
-    @Environment(SessionStore.self) private var session
     @Environment(LoginPresentation.self) private var presentation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var isAuthenticating: Bool {
-        switch session.phase {
-        case .restoring, .authenticated: true
-        default: session.isBusy || presentation.isActive
+    private var destination: Int { showsError ? 2 : (presentation.isActive ? 1 : 0) }
+
+    private var travelAnimation: Animation? {
+        guard !reduceMotion else { return nil }
+        if destination == 1 && presentation.startsFromInput {
+            return .easeOut(duration: LoginPresentation.initialTravelDuration)
         }
+        return .easeInOut(duration: LoginPresentation.travelDuration)
     }
 
     var body: some View {
         GeometryReader { geometry in
-            let logoSpace = max(0, geometry.size.height - 240)
+            let size = geometry.size
+            let logoSpace = max(0, size.height - 240)
+            let centerY = (size.height + geometry.safeAreaInsets.bottom - geometry.safeAreaInsets.top) / 2
+            let y = destination == 2 ? 60 : (destination == 1 ? centerY : logoSpace / 2)
             TimelineView(.animation(paused: !presentation.isActive || reduceMotion)) { timeline in
-                let displacement = reduceMotion || showsError ? 0 : presentation.displacement(at: timeline.date)
                 Image("NHentaiLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(
-                        width: showsError ? 144 : min(240, geometry.size.width * 0.55),
+                        width: showsError ? 144 : min(240, size.width * 0.55),
                         height: showsError ? 64 : min(120, logoSpace * 0.65)
                     )
-                    .position(
-                        x: geometry.size.width / 2,
-                        y: (showsError ? 60 : logoSpace / 2) + displacement
-                    )
-                    .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.9), value: showsError)
+                    // Bounce is applied inside the animated placement so its
+                    // frames cannot animate the caption or interrupt travel.
+                    .offset(y: reduceMotion || showsError ? 0 : presentation.displacement(at: timeline.date))
+                    .position(x: size.width / 2, y: y)
+                    .animation(travelAnimation, value: destination)
             }
-            // This caption stays at the login position, independent of both
-            // the bounce displacement and the logo's journey to/from the top.
-            Color.clear
-                .frame(width: min(240, geometry.size.width * 0.55), height: min(120, logoSpace * 0.65))
-                .overlay(alignment: .bottom) {
-                    Text("Signing in…")
-                        .font(.footnote.weight(.medium))
-                        .tracking(0.5)
-                        .foregroundStyle(.white.opacity(0.55))
-                        .offset(y: 52)
-                }
-                .position(x: geometry.size.width / 2, y: logoSpace / 2)
-                .opacity(isAuthenticating && !showsError ? 1 : 0)
-                .animation(.easeOut(duration: 0.2), value: isAuthenticating && !showsError)
+            Text("Signing in…")
+                .font(.footnote.weight(.medium))
+                .tracking(0.5)
+                .foregroundStyle(.white.opacity(0.55))
+                .position(x: size.width / 2, y: max(centerY + 80, size.height - 52))
+                .opacity(presentation.isActive && !showsError ? 1 : 0)
+                .animation(.easeOut(duration: 0.2), value: presentation.isActive && !showsError)
         }
+        .ignoresSafeArea(.keyboard)
         .accessibilityHidden(true)
         .allowsHitTesting(false)
     }
 }
 
 struct SignInView: View {
+    let submit: (String) -> Void
     @Environment(SessionStore.self) private var session
     @Environment(LoginPresentation.self) private var presentation
     @State private var apiKey = ""
-    @State private var isSubmitting = false
 
     @FocusState private var isKeyFocused: Bool
     private let accent = Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255)
@@ -100,7 +103,7 @@ struct SignInView: View {
         switch session.phase {
         // Keep the form hidden while this view fades into the restore error.
         case .restoring, .authenticated, .restoreFailed: true
-        default: session.isBusy || isSubmitting || presentation.isActive
+        default: session.isBusy || presentation.isActive
         }
     }
 
@@ -176,16 +179,6 @@ struct SignInView: View {
     private func signIn() {
         guard !isAuthenticating else { return }
         isKeyFocused = false
-        presentation.begin()
-        isSubmitting = true
-        Task {
-            await session.signIn(key: apiKey)
-            if case .authenticated = session.phase {
-                apiKey = ""
-            } else {
-                try? await presentation.finish()
-            }
-            isSubmitting = false
-        }
+        submit(apiKey)
     }
 }

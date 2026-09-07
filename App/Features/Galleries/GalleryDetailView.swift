@@ -36,134 +36,59 @@ struct GalleryDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            if let gallery {
-                VStack(alignment: .leading, spacing: 24) {
-                    if let mediaError = media.error {
-                        InlineErrorView(error: mediaError)
-                        Button("Try Again") { Task { await load() } }
-                    }
-                    GalleryCover(url: media.thumbnail(gallery.cover.path, galleryID: id, kind: .cover), retainsLoadedImage: true, letterboxColor: Color(uiColor: .systemBackground))
-                        .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        GalleryTitleLabel(title: gallery.title.pretty, tagIDs: gallery.tags.map(\.id))
-                            .font(.title2.bold())
-                            .modifier(LongPressCopy(value: gallery.title.pretty, actionName: "Copy title", onCopy: showCopied))
-                        if let japanese = gallery.title.japanese, !japanese.isEmpty {
-                            Text(verbatim: japanese)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .modifier(LongPressCopy(value: japanese, actionName: "Copy subtitle", onCopy: showCopied))
+        GeometryReader { geometry in
+            let twoColumns = UIDevice.current.userInterfaceIdiom == .pad
+                && geometry.size.width > geometry.size.height
+                && geometry.size.width >= 760
+            ScrollView {
+                if let gallery {
+                    VStack(alignment: .leading, spacing: 24) {
+                        if let mediaError = media.error {
+                            InlineErrorView(error: mediaError)
+                            Button("Try Again") { Task { await load() } }
                         }
-                    }
-
-                    HStack {
-                        Label("\(gallery.numPages) pages", systemImage: "book")
-                        Spacer()
-                        Button {
-                            Task { await toggleFavorite() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: favorites.states[id]?.favorited == true ? "heart.fill" : "heart")
-                                    .foregroundStyle(favorites.states[id]?.favorited == true
-                                        ? Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255)
-                                        : Color.secondary)
-                                Text(favorites.states[id]?.count ?? gallery.numFavorites, format: .number)
-                                    .monospacedDigit()
-                            }
-                            .opacity(favorites.updating.contains(id) ? 0.3 : 1)
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
-                            .overlay {
-                                if favorites.updating.contains(id) { ProgressView() }
-                            }
+                        GalleryDetailHeader(twoColumns: twoColumns, availableWidth: geometry.size.width) {
+                            GalleryCover(url: media.thumbnail(gallery.cover.path, galleryID: id, kind: .cover), retainsLoadedImage: true, letterboxColor: Color(uiColor: .systemBackground))
+                                .aspectRatio(CGFloat(gallery.cover.width) / CGFloat(max(1, gallery.cover.height)), contentMode: .fit)
+                                .frame(maxWidth: .infinity)
+                        } information: {
+                            galleryInformation(gallery)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(favorites.updating.contains(id) || favorites.states[id] == nil)
-                        .accessibilityLabel(favorites.states[id]?.favorited == true ? Text("Unfavorite") : Text("Favorite"))
-                        .accessibilityValue((favorites.states[id]?.count ?? gallery.numFavorites).formatted(.number.locale(locale)))
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
 
-                    if let favoriteError { InlineErrorView(error: favoriteError) }
-                    if let error { InlineErrorView(error: error) }
-
-                    LabeledContent("Uploaded") {
-                        Text(Date(timeIntervalSince1970: Double(gallery.uploadDate)), format: .dateTime.year().month().day())
-                    }
-                    .font(.subheadline)
-                    if !gallery.scanlator.isEmpty {
-                        LabeledContent("Scanlator", value: gallery.scanlator)
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
-                            FlowLayout {
-                                tagTypeTitle(type)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .padding(.trailing, 4)
-                                ForEach(gallery.tags.filter { $0.type == type }) { tag in
-                                    // Keep this detail and its originating search on the
-                                    // stack; the destination owns its own query and sort.
-                                    NavigationLink {
-                                        SearchView(api: api, initialQuery: tag.searchQuery)
+                        if !gallery.pages.isEmpty {
+                            Text("Pages").font(.headline)
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
+                                ForEach(Array(gallery.pages.enumerated()), id: \.element.id) { index, page in
+                                    Button {
+                                        readerDestination = ReaderDestination(galleryID: id, pages: gallery.pages, initialIndex: index)
                                     } label: {
-                                        HStack(spacing: 4) {
-                                            Text(verbatim: tag.name)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                            Text(tag.count, format: .number.notation(.compactName))
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                                .fixedSize()
-                                        }
-                                        .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 5)
-                                        .modifier(GalleryTagAppearance())
+                                        GalleryCover(url: media.thumbnail(page.thumbnail, galleryID: id, kind: .pageThumbnail(page.number)), letterboxColor: Color(uiColor: .systemBackground))
+                                            .aspectRatio(0.7, contentMode: .fit)
+                                            .overlay(alignment: .bottomTrailing) {
+                                                Text(page.number, format: .number)
+                                                    .foregroundStyle(.white)
+                                                    .font(.caption2.monospacedDigit())
+                                                    .padding(4)
+                                                    .background(.black.opacity(0.8))
+                                            }
                                     }
                                     .buttonStyle(.plain)
+                                    .accessibilityLabel(Text("Open page \(index + 1)"))
                                 }
                             }
                         }
                     }
-
-                    if !gallery.pages.isEmpty {
-                        Text("Pages").font(.headline)
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
-                            ForEach(Array(gallery.pages.enumerated()), id: \.element.id) { index, page in
-                                Button {
-                                    readerDestination = ReaderDestination(galleryID: id, pages: gallery.pages, initialIndex: index)
-                                } label: {
-                                    GalleryCover(url: media.thumbnail(page.thumbnail, galleryID: id, kind: .pageThumbnail(page.number)), letterboxColor: Color(uiColor: .systemBackground))
-                                        .aspectRatio(0.7, contentMode: .fit)
-                                        .overlay(alignment: .bottomTrailing) {
-                                            Text(page.number, format: .number)
-                                                .foregroundStyle(.white)
-                                                .font(.caption2.monospacedDigit())
-                                                .padding(4)
-                                                .background(.black.opacity(0.8))
-                                        }
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text("Open page \(index + 1)"))
-                            }
-                        }
-                    }
+                    .padding(16)
+                    .frame(maxWidth: twoColumns ? 1100 : 760)
+                    .frame(maxWidth: .infinity)
+                } else if let error {
+                    VStack(spacing: 16) {
+                        InlineErrorView(error: error)
+                        Button("Try Again") { Task { await load() } }
+                    }.padding(24)
+                } else {
+                    ProgressView("Loading gallery…").padding(32)
                 }
-                .padding(16)
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
-            } else if let error {
-                VStack(spacing: 16) {
-                    InlineErrorView(error: error)
-                    Button("Try Again") { Task { await load() } }
-                }.padding(24)
-            } else {
-                ProgressView("Loading gallery…").padding(32)
             }
         }
         .background(Color(uiColor: .systemBackground))
@@ -278,6 +203,94 @@ struct GalleryDetailView: View {
         favoriteError = nil
         do { try await favorites.set(id: id, favorited: !state.favorited, api: api) }
         catch { favoriteError = error }
+    }
+
+    private func galleryInformation(_ gallery: GalleryDetail) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                GalleryTitleLabel(title: gallery.title.pretty, tagIDs: gallery.tags.map(\.id))
+                    .font(.title2.bold())
+                    .modifier(LongPressCopy(value: gallery.title.pretty, actionName: "Copy title", onCopy: showCopied))
+                if let japanese = gallery.title.japanese, !japanese.isEmpty {
+                    Text(verbatim: japanese)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .modifier(LongPressCopy(value: japanese, actionName: "Copy subtitle", onCopy: showCopied))
+                }
+            }
+
+            HStack {
+                Label("\(gallery.numPages) pages", systemImage: "book")
+                Spacer()
+                Button {
+                    Task { await toggleFavorite() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: favorites.states[id]?.favorited == true ? "heart.fill" : "heart")
+                            .foregroundStyle(favorites.states[id]?.favorited == true
+                                ? Color(red: 237 / 255, green: 39 / 255, blue: 84 / 255)
+                                : Color.secondary)
+                        Text(favorites.states[id]?.count ?? gallery.numFavorites, format: .number)
+                            .monospacedDigit()
+                    }
+                    .opacity(favorites.updating.contains(id) ? 0.3 : 1)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                    .overlay {
+                        if favorites.updating.contains(id) { ProgressView() }
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(favorites.updating.contains(id) || favorites.states[id] == nil)
+                .accessibilityLabel(favorites.states[id]?.favorited == true ? Text("Unfavorite") : Text("Favorite"))
+                .accessibilityValue((favorites.states[id]?.count ?? gallery.numFavorites).formatted(.number.locale(locale)))
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+
+            if let favoriteError { InlineErrorView(error: favoriteError) }
+            if let error { InlineErrorView(error: error) }
+
+            LabeledContent("Uploaded") {
+                Text(Date(timeIntervalSince1970: Double(gallery.uploadDate)), format: .dateTime.year().month().day())
+            }
+            .font(.subheadline)
+            if !gallery.scanlator.isEmpty {
+                LabeledContent("Scanlator", value: gallery.scanlator)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(Set(gallery.tags.map(\.type))).sorted(), id: \.self) { type in
+                    FlowLayout {
+                        tagTypeTitle(type)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.trailing, 4)
+                        ForEach(gallery.tags.filter { $0.type == type }) { tag in
+                            // Keep this detail and its originating search on the
+                            // stack; the destination owns its own query and sort.
+                            NavigationLink {
+                                SearchView(api: api, initialQuery: tag.searchQuery)
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(verbatim: tag.name)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text(tag.count, format: .number.notation(.compactName))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize()
+                                }
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .modifier(GalleryTagAppearance())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func tagTypeTitle(_ type: String) -> Text {
