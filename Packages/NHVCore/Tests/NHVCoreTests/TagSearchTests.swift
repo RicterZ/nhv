@@ -37,3 +37,17 @@ func tagClicksSearchUsingTheirType(type: String) async throws {
     let other = GalleryQuery.search(#"artist:"some language: name""#, .date)
     #expect(other.filtered(language: .english) == .search(#"language:english artist:"some language: name""#, .date))
 }
+
+@Test func tagSearchAcceptsAdditionalLanguageAndSort() async throws {
+    let tag = try searchTag(type: "tag", name: "some name")
+    var terms = SearchTerms.split(tag.searchQuery)
+    terms.append(contentsOf: SearchTerms.split(#"language:"chinese""#))
+    let query = GalleryQuery.search(terms.joined(separator: " "), .week).filtered(language: .english)
+    let transport = StubTransport(emptyPage)
+    _ = try await makeAPI(transport).galleries(matching: query, page: 1)
+    let request = try #require(await transport.captured().first)
+    let parameters = try #require(URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems)
+    #expect(request.url?.path == "/api/v2/search")
+    #expect(parameters.first { $0.name == "query" }?.value == #"tag:"some name" language:"chinese""#)
+    #expect(parameters.first { $0.name == "sort" }?.value == "popular-week")
+}

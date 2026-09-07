@@ -12,7 +12,6 @@ struct GalleryDetailView: View {
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
-    @Environment(AppNavigation.self) private var navigation
     @Environment(\.locale) private var locale
     @State private var gallery: GalleryDetail?
     @State private var error: (any Error)?
@@ -108,8 +107,10 @@ struct GalleryDetailView: View {
                                     .foregroundStyle(.secondary)
                                     .padding(.trailing, 4)
                                 ForEach(gallery.tags.filter { $0.type == type }) { tag in
-                                    Button {
-                                        navigation.openSearch(query: tag.searchQuery)
+                                    // Keep this detail and its originating search on the
+                                    // stack; the destination owns its own query and sort.
+                                    NavigationLink {
+                                        SearchView(api: api, initialQuery: tag.searchQuery)
                                     } label: {
                                         HStack(spacing: 4) {
                                             Text(verbatim: tag.name)

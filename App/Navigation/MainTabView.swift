@@ -41,8 +41,7 @@ struct MainTabView: View {
             }
                 .tabItem { Label(AppLocalization.string("Home", locale: language.locale), systemImage: "books.vertical") }
                 .tag(AppNavigation.Tab.home)
-            NavigationStack { SearchView(api: account.api, initialQuery: navigation.searchRequest.query) }
-                .id(navigation.searchRequest.id)
+            NavigationStack { SearchView(api: account.api) }
                 .tabItem { Label(AppLocalization.string("Search", locale: language.locale), systemImage: "magnifyingglass") }
                 .tag(AppNavigation.Tab.search)
             NavigationStack { FavoritesView(api: account.api, preloaded: favoritesFeed) }
