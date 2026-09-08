@@ -20,7 +20,7 @@ struct MainTabView: View {
         self.account = account
         self.isReady = isReady
         let media = MediaStore()
-        let favorites = FavoriteStore()
+        let favorites = FavoriteStore(accountID: account.user.id)
         _media = State(initialValue: media)
         _favorites = State(initialValue: favorites)
         _favoritesFeed = State(initialValue: FavoritesFeedStore(api: account.api, media: media, favorites: favorites))
@@ -72,6 +72,10 @@ struct MainTabView: View {
         .tint(theme.accentColor)
         .preferredColorScheme(theme.colorScheme)
         .task { await favoritesFeed.prepare() }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await favorites.synchronize(api: account.api)
+        }
         .onDisappear {
             favoritesFeed.cancel()
             media.thumbnails.cancel()

@@ -6,6 +6,7 @@ struct PagedReaderView: UIViewRepresentable {
     let index: Int
     let resetID: Int
     @Binding var isZoomed: Bool
+    var doubleTapZoomEnabled = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
 
@@ -18,6 +19,7 @@ struct PagedReaderView: UIViewRepresentable {
         viewport.backgroundColor = gapColor
         view.backgroundColor = gapColor
         view.selectPage = selectPage
+        view.doubleTapZoomEnabled = doubleTapZoomEnabled
         view.zoomChanged = { zoomed in
             DispatchQueue.main.async {
                 if isZoomed != zoomed { isZoomed = zoomed }
@@ -58,6 +60,11 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     private var lastSize = CGSize.zero
     var selectPage: ((Int) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
+    var doubleTapZoomEnabled = false {
+        didSet {
+            for page in pages.values { page.scroll.doubleTapZoomEnabled = doubleTapZoomEnabled }
+        }
+    }
 
     init() {
         super.init(frame: .zero)
@@ -123,6 +130,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
                 addSubview(page)
             }
             page.setImage(images[index])
+            page.scroll.doubleTapZoomEnabled = doubleTapZoomEnabled
         }
     }
 

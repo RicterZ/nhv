@@ -21,6 +21,7 @@ struct ReaderView: View {
     @State private var resetID = 0
     @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
+    @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
 
     init(destination: ReaderDestination, api: NHentaiAPI) {
         galleryID = destination.galleryID
@@ -39,6 +40,7 @@ struct ReaderView: View {
             if pageTurnMode == .swipe {
                 PagedReaderView(images: pageURLs.map { $0.flatMap { media.reader.images[$0] } },
                     index: index, resetID: resetID, isZoomed: $isZoomed,
+                    doubleTapZoomEnabled: doubleTapZoom,
                     selectPage: { turnPage($0 - index) })
                     .ignoresSafeArea()
             } else {

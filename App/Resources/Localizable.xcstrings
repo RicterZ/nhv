@@ -346,6 +346,29 @@
         }
       }
     },
+    "Double-Tap to Zoom": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double-Tap to Zoom"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダブルタップでズーム"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "双击缩放"
+          }
+        }
+      }
+    },
     "Expand": {
       "extractionState": "manual",
       "localizations": {

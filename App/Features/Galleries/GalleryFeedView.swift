@@ -113,6 +113,9 @@ private struct GalleryFeedView<Header: View>: View {
         .refreshable {
             await media.prepare(api: api)
             await feed.refresh()
+            if case .favorites = query {
+                await favorites.synchronize(api: api, force: true)
+            }
         }
         .task {
             if let preloadedFavorites {

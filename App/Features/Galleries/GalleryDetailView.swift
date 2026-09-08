@@ -168,10 +168,12 @@ struct GalleryDetailView: View {
         isLoading = true
         error = nil
         defer { isLoading = false }
+        let favoriteVersion = favorites.version(for: id)
         do {
             let result = try await GalleryDetailCache.shared.gallery(id: id, api: api, refresh: refresh)
             try Task.checkCancellation()
-            favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites)
+            favorites.remember(id: id, favorited: result.isFavorited, count: result.numFavorites,
+                expectedVersion: favoriteVersion)
             languages.remember(result.tags)
             gallery = result
             if summary == nil, recordsBrowsingHistory, !hasRecordedVisit {
@@ -190,9 +192,8 @@ struct GalleryDetailView: View {
             media.thumbnails.enqueue([cover].compactMap { $0 } + pages)
             // Account-specific state is refreshed separately without blocking
             // cached content or turning an offline visit into a detail error.
-            if result.isFavorited == nil, favorites.states[id] == nil,
-               let state = try? await api.favorite(id: id) {
-                favorites.remember(id: id, favorited: state.favorited, count: state.numFavorites ?? result.numFavorites)
+            if result.isFavorited == nil {
+                await favorites.refresh(id: id, api: api)
             }
         } catch is CancellationError { return }
         catch { self.error = error }

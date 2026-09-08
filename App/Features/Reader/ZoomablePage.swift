@@ -37,10 +37,14 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
     var turnPage: ((Int) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
     private var pageTap: UITapGestureRecognizer!
+    private var zoomTap: UITapGestureRecognizer!
+    var doubleTapZoomEnabled = false {
+        didSet { updateTapGestures() }
+    }
     var pageTurnMode = PageTurnMode.tap {
         didSet {
             guard oldValue != pageTurnMode else { return }
-            pageTap.isEnabled = pageTurnMode == .tap
+            updateTapGestures()
             updatePanning()
         }
     }
@@ -60,7 +64,11 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
         pageTap = tap
         addGestureRecognizer(tap)
-
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(doubleTapped(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        zoomTap = doubleTap
+        addGestureRecognizer(doubleTap)
+        updateTapGestures()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -107,6 +115,26 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
         guard pageTurnMode == .tap, zoomScale <= 1.01, !isZooming else { return }
         let x = gesture.location(in: self).x - bounds.minX
         turnPage?(x < bounds.width / 2 ? -1 : 1)
+    }
+
+    @objc private func doubleTapped(_ gesture: UITapGestureRecognizer) {
+        guard pageTurnMode == .swipe, doubleTapZoomEnabled,
+              pageImage.image != nil, !isZooming else { return }
+        if zoomScale > 1.01 {
+            setZoomScale(1, animated: true)
+        } else {
+            let scale = min(maximumZoomScale, 2.5)
+            let point = gesture.location(in: pageImage)
+            let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
+            zoom(to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
+                width: size.width, height: size.height), animated: true)
+        }
+    }
+
+    private func updateTapGestures() {
+        pageTap.isEnabled = pageTurnMode == .tap
+        zoomTap.isEnabled = pageTurnMode == .swipe && doubleTapZoomEnabled
+        // Mutually exclusive: tap-to-turn never waits for a second tap.
     }
 
     private func updatePanning() {

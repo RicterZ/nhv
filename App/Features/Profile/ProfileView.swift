@@ -18,6 +18,7 @@ struct ProfileView: View {
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
+    @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
     let user: CurrentUser
     let api: NHentaiAPI
@@ -59,6 +60,11 @@ struct ProfileView: View {
                 }
                 .tint(theme.accentColor)
                 .id("page-turn-\(theme.rawValue)")
+                Toggle("Double-Tap to Zoom", isOn: Binding(
+                    get: { pageTurnMode == .swipe && doubleTapZoom },
+                    set: { doubleTapZoom = $0 }
+                ))
+                .disabled(pageTurnMode != .swipe)
                 Toggle("Read Clipboard", isOn: $readsClipboard)
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
