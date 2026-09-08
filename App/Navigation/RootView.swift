@@ -8,9 +8,10 @@ struct RootView: View {
     @State private var presentation = LoginPresentation()
     @State private var isReturningToLogin = false
     @State private var submittedKey: String?
+    @Environment(\.scenePhase) private var scenePhase
 
     private var isReady: Bool {
-        if case .authenticated(let account) = session.phase { return readyAccountID == account.id }
+        if case .authenticated(let account) = session.phase { return session.restoredFromCache || readyAccountID == account.id }
         return false
     }
 
@@ -25,7 +26,9 @@ struct RootView: View {
                     .accessibilityHidden(!isReady)
                     .task(id: account.id) {
                         // Mount the real home feed so its requests and image queue are reused.
-                        do { try await presentation.finish() } catch { return }
+                        do {
+                            if !session.restoredFromCache { try await presentation.finish() }
+                        } catch { return }
                         guard case .authenticated(let current) = session.phase, current.id == account.id else { return }
                         readyAccountID = account.id
                     }
@@ -65,8 +68,9 @@ struct RootView: View {
             if ready { submittedKey = nil }
             else { readyAccountID = nil }
         }
-        .task {
-            await restore()
+        .task { await restore() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await session.validate() } }
         }
         .task(id: isReturningToLogin) {
             guard isReturningToLogin else { return }
@@ -89,7 +93,7 @@ struct RootView: View {
 
     private var showsSignIn: Bool {
         if case .restoreFailed = session.phase { return presentation.isActive }
-        if case .signedOut = session.phase, session.error != nil { return presentation.isActive }
+        if case .signedOut = session.phase, session.error != nil, session.error as? APIError != .unauthenticated { return presentation.isActive }
         return true
     }
 
@@ -104,6 +108,7 @@ struct RootView: View {
     }
 
     private func restore(beginAnimation: Bool = true) async {
+        if case .authenticated = session.phase { await session.validate(); return }
         if beginAnimation { presentation.begin(reduceMotion: reduceMotion, fromInput: true) }
         await session.restore()
         if case .authenticated = session.phase { return }

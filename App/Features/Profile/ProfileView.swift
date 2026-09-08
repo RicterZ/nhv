@@ -2,6 +2,7 @@ import SwiftUI
 import NHVCore
 
 struct ProfileView: View {
+    @Environment(AppNavigation.self) private var navigation
     @Environment(SessionStore.self) private var session
     @Environment(MediaStore.self) private var media
     @Environment(LanguagePreference.self) private var language
@@ -82,9 +83,7 @@ struct ProfileView: View {
                         Text("Unavailable")
                     }
                 }
-                NavigationLink {
-                    BrowsingHistoryView(api: api)
-                } label: {
+                NavigationLink(value: AppNavigation.Route(.history)) {
                     LabeledContent("Browsing History") {
                         if let historyCount {
                             Text(historyCount, format: .number)

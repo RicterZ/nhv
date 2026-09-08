@@ -3,6 +3,8 @@ import NHVCore
 
 struct SearchView: View {
     let api: NHentaiAPI
+    let stateKey: String
+    @Environment(AppNavigation.self) private var navigation
     @Environment(LanguagePreference.self) private var language
     @State private var input = ""
     @State private var terms: [String] = []
@@ -10,12 +12,14 @@ struct SearchView: View {
     @State private var isSearchPresented = false
     @State private var completionRequest: SearchCompletionRequest?
     @State private var history = SearchHistory()
-    @State private var directGalleryID: Int?
     @State private var showsInvalidID = false
 
-    init(api: NHentaiAPI, initialQuery: String = "") {
+    init(api: NHentaiAPI, stateKey: String = "root", savedState: AppNavigation.SearchState = .init()) {
+        self.stateKey = stateKey
+        _input = State(initialValue: savedState.input)
+        _sort = State(initialValue: savedState.sort)
         self.api = api
-        _terms = State(initialValue: SearchTerms.split(initialQuery))
+        _terms = State(initialValue: savedState.terms)
     }
 
     private var query: String { terms.joined(separator: " ") }
@@ -53,11 +57,8 @@ struct SearchView: View {
         .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
         .modifier(SearchCompletionSelection(request: completionRequest))
         .background(SearchSortAccessory(selection: $sort, text: $input).frame(width: 0, height: 0))
-        .navigationDestination(isPresented: Binding(
-            get: { directGalleryID != nil },
-            set: { if !$0 { directGalleryID = nil } }
-        )) {
-            if let directGalleryID { GalleryDetailView(api: api, id: directGalleryID) }
+        .onChange(of: AppNavigation.SearchState(terms: terms, input: input, sort: sort)) { _, state in
+            navigation.saveSearch(state, key: stateKey)
         }
         .alert("Invalid gallery ID", isPresented: $showsInvalidID) {
             Button("OK", role: .cancel) {}
@@ -94,7 +95,7 @@ struct SearchView: View {
             input = ""
             completionRequest = nil
             isSearchPresented = false
-            directGalleryID = id
+            navigation.openGallery(id: id)
         } catch {
             showsInvalidID = true
         }

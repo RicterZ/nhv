@@ -18,7 +18,7 @@ struct GalleryDetailView: View {
     @State private var favoriteError: (any Error)?
     @State private var isLoading = false
     @State private var hasRecordedVisit = false
-    @State private var readerDestination: ReaderDestination?
+    @Environment(AppNavigation.self) private var navigation
     @State private var copyNotification: UUID?
     @State private var openedAt = Date()
 
@@ -29,7 +29,8 @@ struct GalleryDetailView: View {
         self.recordsBrowsingHistory = recordsBrowsingHistory
     }
 
-    init(api: NHentaiAPI, id: Int) {
+    init(api: NHentaiAPI, id: Int, recordsBrowsingHistory: Bool = true) {
+        self.recordsBrowsingHistory = recordsBrowsingHistory
         self.api = api
         self.id = id
         self.summary = nil
@@ -60,7 +61,7 @@ struct GalleryDetailView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
                                 ForEach(Array(gallery.pages.enumerated()), id: \.element.id) { index, page in
                                     Button {
-                                        readerDestination = ReaderDestination(galleryID: id, pages: gallery.pages, initialIndex: index)
+                                        navigation.reader = AppNavigation.ReaderState(galleryID: id, pages: gallery.pages, initialIndex: index)
                                     } label: {
                                         GalleryCover(url: media.thumbnail(page.thumbnail, galleryID: id, kind: .pageThumbnail(page.number)), letterboxColor: Color(uiColor: .systemBackground))
                                             .aspectRatio(0.7, contentMode: .fit)
@@ -143,9 +144,7 @@ struct GalleryDetailView: View {
             }
         }
         .task { if gallery == nil { await load() } }
-        .fullScreenCover(item: $readerDestination) { destination in
-            ReaderView(destination: destination, api: api)
-        }
+
     }
 
     private func showCopied() {
@@ -270,8 +269,8 @@ struct GalleryDetailView: View {
                         ForEach(gallery.tags.filter { $0.type == type }) { tag in
                             // Keep this detail and its originating search on the
                             // stack; the destination owns its own query and sort.
-                            NavigationLink {
-                                SearchView(api: api, initialQuery: tag.searchQuery)
+                            Button {
+                                navigation.push(.init(.search(tag.searchQuery)))
                             } label: {
                                 HStack(spacing: 4) {
                                     Text(verbatim: tag.name)

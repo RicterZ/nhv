@@ -33,7 +33,7 @@ private struct GalleryFeedView<Header: View>: View {
     @State private var feed: GalleryFeed
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
-    @State private var selectedGallery: GallerySummary?
+    @State private var isRefreshing = false
 
     init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore,
          preloadedFavorites: FavoritesFeedStore? = nil, @ViewBuilder header: @escaping () -> Header) {
@@ -64,6 +64,11 @@ private struct GalleryFeedView<Header: View>: View {
         return false
     }
 
+    private var displayedItems: [GallerySummary] {
+        if case .favorites = query { return favorites.visibleFavorites(in: feed.items) }
+        return feed.items
+    }
+
     var body: some View {
         GalleryScrollView(header: header) {
             LazyVStack(spacing: 24) {
@@ -77,10 +82,9 @@ private struct GalleryFeedView<Header: View>: View {
                     }
                 }
 
-                if !feed.items.isEmpty {
-                    GalleryGrid(galleries: feed.items, api: api, showsFavoriteCount: showsFavoriteCount,
-                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true,
-                        openDetail: { selectedGallery = $0 })
+                if !displayedItems.isEmpty {
+                    GalleryGrid(galleries: displayedItems, api: api, showsFavoriteCount: showsFavoriteCount,
+                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true)
                 }
 
                 if let error = feed.error {
@@ -91,7 +95,7 @@ private struct GalleryFeedView<Header: View>: View {
                 } else if feed.isLoading {
                     ProgressView("Loading galleries…")
                         .padding(24)
-                } else if feed.hasLoaded && feed.items.isEmpty {
+                } else if feed.hasLoaded && displayedItems.isEmpty && !feed.hasMore {
                     ContentUnavailableView("No galleries", systemImage: "books.vertical", description: Text("Pull down to refresh."))
                 } else if feed.hasMore && feed.hasLoaded {
                     Button("Load More", action: loadMore)
@@ -102,19 +106,16 @@ private struct GalleryFeedView<Header: View>: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(uiColor: .systemBackground))
-        .navigationDestination(isPresented: Binding(
-            get: { selectedGallery != nil },
-            set: { if !$0 { selectedGallery = nil } }
-        )) {
-            if let selectedGallery {
-                GalleryDetailView(api: api, summary: selectedGallery)
-            }
-        }
+        .scrollBounceBehavior(.always)
         .refreshable {
-            await media.prepare(api: api)
-            await feed.refresh()
+            guard !isRefreshing else { return }
+            isRefreshing = true
+            defer { isRefreshing = false }
+            nextPageTask?.cancel()
+            if let preloadedFavorites { await preloadedFavorites.refresh() }
+            else { await feed.refresh() }
             if case .favorites = query {
-                await favorites.synchronize(api: api, force: true)
+                favorites.requestSynchronization(api: api)
             }
         }
         .task {
@@ -138,7 +139,7 @@ private struct GalleryFeedView<Header: View>: View {
     }
 
     private func loadMore() {
-        guard !feed.isLoading else { return }
+        guard !isRefreshing, !feed.isLoading else { return }
         nextPageTask = Task { await feed.loadNext() }
     }
 }
@@ -150,7 +151,7 @@ struct GalleryGrid: View {
     var recordsBrowsingHistory = true
     var prefersResultFavoriteCount = false
     var respectsNSFWSetting = false
-    var openDetail: ((GallerySummary) -> Void)?
+    @Environment(AppNavigation.self) private var navigation
     @Environment(MediaStore.self) private var media
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
 
@@ -160,7 +161,7 @@ struct GalleryGrid: View {
                 GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail, galleryID: gallery.id), api: api,
                     showsFavoriteCount: showsFavoriteCount, recordsBrowsingHistory: recordsBrowsingHistory,
                     prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: respectsNSFWSetting,
-                    openDetail: { openDetail?(gallery) })
+                    openDetail: { navigation.openGallery(gallery, recordsVisit: recordsBrowsingHistory) })
             }
         }
     }
@@ -201,9 +202,7 @@ private struct GalleryCard: View {
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { openDetail() }
                 } else {
-                    NavigationLink {
-                        GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
-                    } label: { cover }
+                    Button(action: openDetail) { cover }
                 }
             }
             .buttonStyle(.plain)
@@ -225,9 +224,7 @@ private struct GalleryCard: View {
                 }
             }
 
-            NavigationLink {
-                GalleryDetailView(api: api, summary: gallery, recordsBrowsingHistory: recordsBrowsingHistory)
-            } label: {
+            Button(action: openDetail) {
                 GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(3)

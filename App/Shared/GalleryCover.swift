@@ -4,15 +4,17 @@ import UIKit
 struct GalleryCover: View {
     let url: URL?
     var fillsStandardCoverWidth = false
-    var retainsLoadedImage = false
+    var retainsLoadedImage = true
     var letterboxColor: Color = .white
     @Environment(MediaStore.self) private var media
     @State private var retainedImage: UIImage?
     @State private var retainedURL: URL?
+    @State private var retainedGeneration: Int?
 
     private var displayedImage: UIImage? {
         guard let url else { return nil }
-        if retainsLoadedImage, retainedURL == url, let retainedImage { return retainedImage }
+        if retainsLoadedImage, retainedGeneration == media.thumbnails.cacheGeneration,
+           retainedURL == url, let retainedImage { return retainedImage }
         return media.thumbnails.image(for: url)
     }
 
@@ -81,6 +83,7 @@ struct GalleryCover: View {
 
     private func retainImageIfAvailable() {
         guard retainsLoadedImage, let url, let image = media.thumbnails.image(for: url) else { return }
+        retainedGeneration = media.thumbnails.cacheGeneration
         retainedURL = url
         retainedImage = image
     }

@@ -9,7 +9,7 @@ struct MainTabView: View {
     @State private var favorites: FavoriteStore
     @State private var favoritesFeed: FavoritesFeedStore
     @State private var languages = GalleryLanguageStore()
-    @State private var navigation = AppNavigation()
+    @State private var navigation: AppNavigation
     @State private var coverPreview = CoverPreview()
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @Environment(\.scenePhase) private var scenePhase
@@ -19,6 +19,7 @@ struct MainTabView: View {
     init(account: AuthenticatedSession, isReady: Bool = true) {
         self.account = account
         self.isReady = isReady
+        _navigation = State(initialValue: AppNavigation(accountID: account.user.id))
         let media = MediaStore()
         let favorites = FavoriteStore(accountID: account.user.id)
         _media = State(initialValue: media)
@@ -33,21 +34,16 @@ struct MainTabView: View {
     var body: some View {
         @Bindable var navigation = navigation
         TabView(selection: $navigation.selectedTab) {
-            NavigationStack(path: $navigation.homePath) {
-                HomeView(api: account.api)
-                    .navigationDestination(for: Int.self) { id in
-                        GalleryDetailView(api: account.api, id: id)
-                    }
-            }
+            stack(.home) { HomeView(api: account.api) }
                 .tabItem { Label(AppLocalization.string("Home", locale: language.locale), systemImage: "books.vertical") }
                 .tag(AppNavigation.Tab.home)
-            NavigationStack { SearchView(api: account.api) }
+            stack(.search) { SearchView(api: account.api, savedState: navigation.searchState("root")) }
                 .tabItem { Label(AppLocalization.string("Search", locale: language.locale), systemImage: "magnifyingglass") }
                 .tag(AppNavigation.Tab.search)
-            NavigationStack { FavoritesView(api: account.api, preloaded: favoritesFeed) }
+            stack(.favorites) { FavoritesView(api: account.api, preloaded: favoritesFeed) }
                 .tabItem { Label(AppLocalization.string("Favorites", locale: language.locale), systemImage: "heart") }
                 .tag(AppNavigation.Tab.favorites)
-            NavigationStack { ProfileView(user: account.user, api: account.api) }
+            stack(.settings) { ProfileView(user: account.user, api: account.api) }
                 .tabItem { Label(AppLocalization.string("Settings", locale: language.locale), systemImage: "gearshape") }
                 .tag(AppNavigation.Tab.settings)
         }
@@ -63,6 +59,11 @@ struct MainTabView: View {
         .onChange(of: navigation.selectedTab) { _, _ in coverPreview.item = nil }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { coverPreview.item = nil }
+        }
+        .fullScreenCover(item: $navigation.reader) { destination in
+            ReaderView(destination: destination, api: account.api)
+                .environment(media)
+                .environment(navigation)
         }
         .environment(coverPreview)
         .environment(navigation)
@@ -89,4 +90,23 @@ struct MainTabView: View {
             }
         }
     }
+    private func stack<Content: View>(_ tab: AppNavigation.Tab, @ViewBuilder content: () -> Content) -> some View {
+        NavigationStack(path: Binding(get: { navigation.path(for: tab) }, set: { navigation.setPath($0, for: tab) })) {
+            content().navigationDestination(for: AppNavigation.Route.self) { route in
+                switch route.kind {
+                case .gallery(let id):
+                    if let summary = navigation.summaries[id] {
+                        GalleryDetailView(api: account.api, summary: summary, recordsBrowsingHistory: route.recordsVisit)
+                    } else {
+                        GalleryDetailView(api: account.api, id: id, recordsBrowsingHistory: route.recordsVisit)
+                    }
+                case .search(let query):
+                    SearchView(api: account.api, stateKey: route.id.uuidString,
+                        savedState: navigation.searchState(route.id.uuidString, initialQuery: query))
+                case .history: BrowsingHistoryView(api: account.api)
+                }
+            }
+        }
+    }
+
 }

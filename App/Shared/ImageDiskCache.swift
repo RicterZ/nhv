@@ -29,8 +29,7 @@ actor ImageDiskCache {
         return try directory().appendingPathComponent(key)
     }
 
-    func image(for url: URL, cacheKey: String, session: URLSession, maximumPixelSize: Int,
-        recover: (@Sendable () async throws -> URL)? = nil) async throws -> UIImage {
+    func cachedImage(cacheKey: String, maximumPixelSize: Int) async throws -> UIImage? {
         let operation = generation
         let file = try? self.file(for: cacheKey)
         if let file, let data = try? Data(contentsOf: file) {
@@ -44,6 +43,15 @@ actor ImageDiskCache {
             // An invalid local file should not cause an endless decoding loop.
             try? FileManager.default.removeItem(at: file)
         }
+
+        return nil
+    }
+
+    func image(for url: URL, cacheKey: String, session: URLSession, maximumPixelSize: Int,
+        recover: (@Sendable () async throws -> URL)? = nil) async throws -> UIImage {
+        let operation = generation
+        if let image = try await cachedImage(cacheKey: cacheKey, maximumPixelSize: maximumPixelSize) { return image }
+        let file = try? self.file(for: cacheKey)
 
         try Task.checkCancellation()
         var request = URLRequest(url: replacementURLs[cacheKey] ?? url, cachePolicy: .reloadIgnoringLocalCacheData)

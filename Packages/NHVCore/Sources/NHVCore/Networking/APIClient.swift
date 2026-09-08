@@ -3,10 +3,17 @@ import Foundation
 public struct APIClient: Sendable {
     private let key: APIKey
     private let transport: any HTTPTransport
+    private var unauthorized: (@Sendable () -> Void)?
 
     public init(key: APIKey, transport: any HTTPTransport = URLSessionTransport()) {
         self.key = key
         self.transport = transport
+    }
+
+    func handlingUnauthorized(_ handler: @escaping @Sendable () -> Void) -> Self {
+        var copy = self
+        copy.unauthorized = handler
+        return copy
     }
 
     func send<Response: Decodable & Sendable>(
@@ -46,7 +53,9 @@ public struct APIClient: Sendable {
         try Task.checkCancellation()
         switch response.statusCode {
         case 200..<300: break
-        case 401: throw APIError.unauthenticated
+        case 401:
+            if authenticated { unauthorized?() }
+            throw APIError.unauthenticated
         case 403: throw APIError.forbidden
         case 404: throw APIError.notFound
         case 429: throw APIError.rateLimited(retryAfter: Self.retryDelay(response.value(forHTTPHeaderField: "Retry-After")))

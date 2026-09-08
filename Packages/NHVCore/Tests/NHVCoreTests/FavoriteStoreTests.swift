@@ -147,3 +147,63 @@ private actor FavoriteTransport: HTTPTransport {
     #expect(store.states[42]?.favorited == false)
     #expect(store.updating.isEmpty)
 }
+
+@Test @MainActor func cancelledFavoriteDisappearsImmediatelyAndStaleRefreshCannotRestoreIt() async throws {
+    let defaults = favoriteDefaults()
+    let api = try makeAPI(FavoriteTransport(pages: [[42]]))
+    let store = FavoriteStore(accountID: 1, defaults: defaults)
+    let feed = GalleryFeed(load: { page in try await api.favorites(page: page) })
+    await feed.loadIfNeeded()
+    store.rememberFromFavoritesList(id: 42, count: 12)
+    #expect(store.visibleFavorites(in: feed.items).count == 1)
+    try await store.set(id: 42, favorited: false, api: api)
+    #expect(store.visibleFavorites(in: feed.items).isEmpty)
+    // The list still returns 42, but its individual GET confirms cancellation.
+    await feed.refresh()
+    await store.synchronize(api: api, force: true)
+    #expect(feed.items.count == 1)
+    #expect(store.visibleFavorites(in: feed.items).isEmpty)
+    let restarted = FavoriteStore(accountID: 1, defaults: defaults)
+    await restarted.synchronize(api: api, force: true)
+    #expect(restarted.visibleFavorites(in: feed.items).isEmpty)
+    // An explicit re-favorite immediately makes an existing list item visible.
+    try await restarted.set(id: 42, favorited: true, api: api)
+    #expect(restarted.visibleFavorites(in: feed.items).count == 1)
+}
+
+private actor ConflictingFavoriteTransport: HTTPTransport {
+    let favorited: Bool?
+    init(favorited: Bool?) { self.favorited = favorited }
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let isList = request.url!.lastPathComponent == "favorites"
+        let body = isList
+            ? #"{"result":[{"id":42,"media_id":"2","english_title":"Fixture","thumbnail":"/thumb.webp","thumbnail_width":2,"thumbnail_height":3}],"num_pages":1}"#
+            : "{\"favorited\":\(favorited == true),\"num_favorites\":10}"
+        let status = !isList && favorited == nil ? 503 : 200
+        return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
+@Test @MainActor func conflictingListKeepsKnownStateOnVerificationFailureAndAllowsExternalChanges() async throws {
+    let store = FavoriteStore(accountID: 1, defaults: favoriteDefaults())
+    store.remember(id: 42, favorited: false, count: 9, expectedVersion: store.version(for: 42))
+    await store.synchronize(api: try makeAPI(ConflictingFavoriteTransport(favorited: nil)), force: true)
+    #expect(store.states[42]?.favorited == false)
+    // A verified change made on another device must still replace the cache.
+    await store.synchronize(api: try makeAPI(ConflictingFavoriteTransport(favorited: true)), force: true)
+    #expect(store.states[42]?.favorited == true)
+    #expect(store.states[42]?.count == 10)
+}
+
+@Test @MainActor func requestingBackgroundSyncDoesNotWaitForSlowPagination() async throws {
+    let store = FavoriteStore(accountID: 1, defaults: favoriteDefaults())
+    let transport = FavoriteTransport(pages: [[1], [42]], pausesLastPage: true)
+    let api = try makeAPI(transport)
+    store.requestSynchronization(api: api)
+    // The caller has already returned while the second page stays suspended.
+    while !(await transport.isPaused()) { await Task.yield() }
+    #expect(store.states.isEmpty)
+    await transport.resume()
+    while store.states[42] == nil { await Task.yield() }
+    #expect(store.states[42]?.favorited == true)
+}

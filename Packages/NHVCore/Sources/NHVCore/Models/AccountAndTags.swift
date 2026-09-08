@@ -1,6 +1,6 @@
 import Foundation
 
-public struct CurrentUser: Decodable, Identifiable, Sendable {
+public struct CurrentUser: Codable, Identifiable, Sendable {
     public let id: Int
     public let username: String
     public let slug: String
@@ -50,7 +50,7 @@ public enum TagType: String, CaseIterable, Sendable {
     case tag, artist, group, parody, character, language, category
 }
 
-public enum GallerySort: String, CaseIterable, Sendable {
+public enum GallerySort: String, Codable, CaseIterable, Sendable {
     case date, popular
     case today = "popular-today"
     case week = "popular-week"

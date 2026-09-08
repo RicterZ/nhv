@@ -5,6 +5,10 @@ public struct NHentaiAPI: Sendable {
 
     public init(client: APIClient) { self.client = client }
 
+    public func handlingUnauthorized(_ handler: @escaping @Sendable () -> Void) -> Self {
+        Self(client: client.handlingUnauthorized(handler))
+    }
+
     public func currentUser() async throws -> CurrentUser {
         try await client.send(["user"])
     }

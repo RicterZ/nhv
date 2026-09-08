@@ -18,6 +18,13 @@ public final class FavoriteStore {
     @ObservationIgnored private var versions: [Int: Int] = [:]
     @ObservationIgnored private var syncing = false
     @ObservationIgnored private var lastSync: Date?
+    @ObservationIgnored private var syncRequested = false
+
+    /// UI refresh completion must not wait for a scan of the entire account.
+    public func requestSynchronization(api: NHentaiAPI) {
+        if syncing { syncRequested = true; return }
+        Task { await synchronize(api: api, force: true) }
+    }
 
     public init(accountID: Int, defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -29,6 +36,10 @@ public final class FavoriteStore {
     }
 
     public func version(for id: Int) -> Int { versions[id, default: 0] }
+
+    public func visibleFavorites(in items: [GallerySummary]) -> [GallerySummary] {
+        items.filter { states[$0.id]?.favorited != false }
+    }
 
     public func remember(id: Int, favorited: Bool?, count: Int?, expectedVersion: Int) {
         guard version(for: id) == expectedVersion, !updating.contains(id), let favorited else { return }
@@ -59,7 +70,13 @@ public final class FavoriteStore {
         guard force || lastSync.map({ Date().timeIntervalSince($0) >= 60 }) ?? true else { return }
         syncing = true
         syncError = nil
-        defer { syncing = false }
+        defer {
+            syncing = false
+            if syncRequested {
+                syncRequested = false
+                requestSynchronization(api: api)
+            }
+        }
         let initialVersions = versions
         let initiallyUpdating = updating
         var snapshot: [Int: Int] = [:]
@@ -73,10 +90,30 @@ public final class FavoriteStore {
                 if page >= response.numPages { break }
                 page += 1
             }
+            // A list snapshot may lag behind a successful write. Resolve
+            // contradictions using the gallery's own account-specific endpoint.
+            // If that check fails, keep the known state and retry next sync.
+            var verified: [Int: FavoriteResponse] = [:]
+            let conflicts = states.keys.filter { states[$0]?.favorited != (snapshot[$0] != nil) }
+            for id in conflicts {
+                guard !initiallyUpdating.contains(id), !updating.contains(id),
+                      version(for: id) == initialVersions[id, default: 0] else { continue }
+                verified[id] = try? await api.favorite(id: id)
+                try Task.checkCancellation()
+                if let response = verified[id] {
+                    // Publish each authoritative result immediately rather
+                    // than waiting for unrelated slow/conflicting galleries.
+                    remember(id: id, favorited: response.favorited, count: response.numFavorites,
+                        expectedVersion: initialVersions[id, default: 0])
+                }
+            }
             for id in Set(states.keys).union(snapshot.keys) {
                 guard !initiallyUpdating.contains(id), !updating.contains(id),
                       version(for: id) == initialVersions[id, default: 0] else { continue }
-                update(id: id, favorited: snapshot[id] != nil, count: states[id]?.count ?? snapshot[id])
+                let listed = snapshot[id] != nil
+                if let known = states[id], known.favorited != listed, verified[id] == nil { continue }
+                update(id: id, favorited: verified[id]?.favorited ?? listed,
+                    count: verified[id]?.numFavorites ?? states[id]?.count ?? snapshot[id])
             }
             persist()
             lastSync = Date()

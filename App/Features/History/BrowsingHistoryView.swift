@@ -7,17 +7,18 @@ struct BrowsingHistoryView: View {
     @Environment(GalleryLanguageStore.self) private var languages
     @Environment(\.scenePhase) private var scenePhase
     @State private var entries: [BrowsingHistoryStore.Entry] = []
-    @State private var query = ""
+    @Environment(AppNavigation.self) private var navigation
     @State private var isLoading = true
     @State private var error: (any Error)?
 
     private var galleries: [GallerySummary] {
-        entries.filter { $0.matches(titleQuery: query) }.map(\.gallery)
+        entries.filter { $0.matches(titleQuery: navigation.historyQuery) }.map(\.gallery)
     }
 
     var body: some View {
+        @Bindable var navigation = navigation
         GalleryScrollView(header: {
-            HistorySearchField(text: $query)
+            HistorySearchField(text: $navigation.historyQuery)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
         }) {
@@ -35,7 +36,7 @@ struct BrowsingHistoryView: View {
                         ContentUnavailableView("No browsing history", systemImage: "clock",
                             description: Text("Galleries you open will appear here."))
                     } else {
-                        ContentUnavailableView.search(text: query)
+                        ContentUnavailableView.search(text: navigation.historyQuery)
                     }
                 }
             }

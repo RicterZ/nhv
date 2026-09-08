@@ -7,8 +7,11 @@ struct PagedReaderView: UIViewRepresentable {
     let resetID: Int
     @Binding var isZoomed: Bool
     var doubleTapZoomEnabled = false
+    var isDismissing = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
+    var dismissalChanged: ((CGFloat) -> Void)?
+    var dismissalEnded: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> ReaderPagerViewport { ReaderPagerViewport() }
 
@@ -16,8 +19,11 @@ struct PagedReaderView: UIViewRepresentable {
         let view = viewport.pager
         // Reader controls stay dark; the space between pages follows app theme.
         let gapColor: UIColor = theme == .dark ? .black : .white
-        viewport.backgroundColor = gapColor
-        view.backgroundColor = gapColor
+        viewport.backgroundColor = isDismissing ? .clear : gapColor
+        view.backgroundColor = isDismissing ? .clear : gapColor
+        view.isDismissing = isDismissing
+        view.dismissalChanged = dismissalChanged
+        view.dismissalEnded = dismissalEnded
         view.selectPage = selectPage
         view.doubleTapZoomEnabled = doubleTapZoomEnabled
         view.zoomChanged = { zoomed in
@@ -59,7 +65,17 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     private var lastResetID: Int?
     private var lastSize = CGSize.zero
     var selectPage: ((Int) -> Void)?
+    var dismissalChanged: ((CGFloat) -> Void)?
+    var dismissalEnded: ((Bool) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
+    var isDismissing = false {
+        didSet {
+            guard oldValue != isDismissing else { return }
+            for page in pages.values {
+                page.scroll.backgroundColor = isDismissing ? .clear : .black
+            }
+        }
+    }
     var doubleTapZoomEnabled = false {
         didSet {
             for page in pages.values { page.scroll.doubleTapZoomEnabled = doubleTapZoomEnabled }
@@ -126,10 +142,14 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
                     self.isScrollEnabled = !zoomed
                     self.zoomChanged?(zoomed)
                 }
+                page.scroll.dismissalChanged = { [weak self] distance in self?.dismissalChanged?(distance) }
+                page.scroll.dismissalEnded = { [weak self] close in self?.dismissalEnded?(close) }
+                panGestureRecognizer.require(toFail: page.scroll.dismissalPan)
                 pages[index] = page
                 addSubview(page)
             }
             page.setImage(images[index])
+            page.scroll.backgroundColor = isDismissing ? .clear : .black
             page.scroll.doubleTapZoomEnabled = doubleTapZoomEnabled
         }
     }

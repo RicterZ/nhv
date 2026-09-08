@@ -1,13 +1,6 @@
 import NHVCore
 import SwiftUI
 
-struct ReaderDestination: Identifiable {
-    let id = UUID()
-    let galleryID: Int
-    let pages: [GalleryPage]
-    let initialIndex: Int
-}
-
 struct ReaderView: View {
     let galleryID: Int
     let pages: [GalleryPage]
@@ -19,11 +12,14 @@ struct ReaderView: View {
     @State private var index: Int
     @State private var isZoomed = false
     @State private var resetID = 0
+    @State private var dismissalOffset: CGFloat = 0
+    @State private var isDismissing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
     @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
 
-    init(destination: ReaderDestination, api: NHentaiAPI) {
+    init(destination: AppNavigation.ReaderState, api: NHentaiAPI) {
         galleryID = destination.galleryID
         pages = destination.pages
         self.api = api
@@ -34,18 +30,23 @@ struct ReaderView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color.black.opacity(1 - min(0.8, dismissalOffset / 400)).ignoresSafeArea()
             let pageURLs = urls
             let url = pageURLs.indices.contains(index) ? pageURLs[index] : nil
             if pageTurnMode == .swipe {
                 PagedReaderView(images: pageURLs.map { $0.flatMap { media.reader.images[$0] } },
                     index: index, resetID: resetID, isZoomed: $isZoomed,
                     doubleTapZoomEnabled: doubleTapZoom,
-                    selectPage: { turnPage($0 - index) })
+                    isDismissing: isDismissing,
+                    selectPage: { turnPage($0 - index) },
+                    dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
+                    .offset(y: dismissalOffset)
                     .ignoresSafeArea()
             } else {
                 ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed,
-                    pageTurnMode: pageTurnMode, turnPage: turnPage)
+                    pageTurnMode: pageTurnMode, turnPage: turnPage,
+                    dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
+                    .offset(y: dismissalOffset)
                     .ignoresSafeArea()
                 if url.flatMap({ media.reader.images[$0] }) == nil {
                     ProgressView().tint(.white).allowsHitTesting(false)
@@ -82,6 +83,7 @@ struct ReaderView: View {
                 .padding(16)
             }
         }
+        .presentationBackground(.clear)
         .foregroundStyle(.white)
         .buttonStyle(.plain)
         .preferredColorScheme(.dark)
@@ -110,11 +112,31 @@ struct ReaderView: View {
             guard !Task.isCancelled else { return }
             media.reader.focus(on: index, urls: urls)
         }
-        .onChange(of: index) { _, _ in media.reader.focus(on: index, urls: urls) }
+        .onChange(of: index) { _, _ in
+            navigation.updateReaderPage(index)
+            media.reader.focus(on: index, urls: urls)
+        }
         .onAppear { navigation.isReading = true }
         .onDisappear {
             media.reader.cancel()
             navigation.isReading = false
+        }
+    }
+
+    private func updateDismissal(_ distance: CGFloat) {
+        isDismissing = true
+        dismissalOffset = distance
+    }
+
+    private func finishDismissal(_ close: Bool) {
+        if close { dismiss() }
+        else {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) {
+                dismissalOffset = 0
+            } completion: {
+                // Keep the moving page transparent until the return finishes.
+                if dismissalOffset == 0 { isDismissing = false }
+            }
         }
     }
 

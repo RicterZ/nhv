@@ -7,6 +7,8 @@ struct ZoomablePage: UIViewRepresentable {
     @Binding var isZoomed: Bool
     var pageTurnMode = PageTurnMode.tap
     let turnPage: (Int) -> Void
+    var dismissalChanged: ((CGFloat) -> Void)?
+    var dismissalEnded: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> PageScrollView {
         let view = PageScrollView()
@@ -15,6 +17,8 @@ struct ZoomablePage: UIViewRepresentable {
     }
 
     func updateUIView(_ view: PageScrollView, context: Context) {
+        view.dismissalChanged = dismissalChanged
+        view.dismissalEnded = dismissalEnded
         view.turnPage = turnPage
         view.pageTurnMode = pageTurnMode
         view.zoomChanged = { zoomed in
@@ -30,7 +34,10 @@ struct ZoomablePage: UIViewRepresentable {
     }
 }
 
-final class PageScrollView: UIScrollView, UIScrollViewDelegate {
+final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+    var dismissalChanged: ((CGFloat) -> Void)?
+    var dismissalEnded: ((Bool) -> Void)?
+    private(set) var dismissalPan: UIPanGestureRecognizer!
     private let pageImage = UIImageView()
     private var fittedBounds = CGSize.zero
     var resetID = 0
@@ -57,7 +64,8 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
         showsVerticalScrollIndicator = false
         showsHorizontalScrollIndicator = false
         contentInsetAdjustmentBehavior = .never
-        backgroundColor = .black
+        // The reader owns the backdrop, so it stays fixed during dismissal.
+        backgroundColor = .clear
         pageImage.contentMode = .scaleAspectFit
         addSubview(pageImage)
 
@@ -69,6 +77,12 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
         zoomTap = doubleTap
         addGestureRecognizer(doubleTap)
         updateTapGestures()
+        let dismissal = UIPanGestureRecognizer(target: self, action: #selector(pulledDown(_:)))
+        dismissal.maximumNumberOfTouches = 1
+        dismissal.delegate = self
+        dismissalPan = dismissal
+        addGestureRecognizer(dismissal)
+        panGestureRecognizer.require(toFail: dismissal)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -128,6 +142,24 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate {
             let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
             zoom(to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
                 width: size.width, height: size.height), animated: true)
+        }
+    }
+
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === dismissalPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
+        let velocity = dismissalPan.velocity(in: window)
+        return dismissalEnded != nil && zoomScale <= 1.01 && !isZooming
+            && velocity.y > 0 && velocity.y > abs(velocity.x) * 1.2
+    }
+
+    @objc private func pulledDown(_ gesture: UIPanGestureRecognizer) {
+        let distance = max(0, gesture.translation(in: window).y)
+        switch gesture.state {
+        case .began, .changed: dismissalChanged?(distance)
+        case .ended:
+            dismissalEnded?(distance > 120 || (distance > 30 && gesture.velocity(in: window).y > 900))
+        case .cancelled, .failed: dismissalEnded?(false)
+        default: break
         }
     }
 
