@@ -21,6 +21,8 @@ struct GalleryDetailView: View {
     @Environment(AppNavigation.self) private var navigation
     @State private var copyNotification: UUID?
     @State private var openedAt = Date()
+    @State private var relatedRefreshID = 0
+    @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
 
     init(api: NHentaiAPI, summary: GallerySummary, recordsBrowsingHistory: Bool = true) {
         self.api = api
@@ -78,6 +80,10 @@ struct GalleryDetailView: View {
                                 }
                             }
                         }
+
+                        if showsRelatedGalleries {
+                            RelatedGalleriesSection(api: api, galleryID: id, refreshID: relatedRefreshID)
+                        }
                     }
                     .padding(16)
                     .frame(maxWidth: twoColumns ? 1100 : 760)
@@ -108,7 +114,10 @@ struct GalleryDetailView: View {
                 shareToolbarItem
             }
         }
-        .refreshable { await load(refresh: true) }
+        .refreshable {
+            await load(refresh: true)
+            if showsRelatedGalleries { relatedRefreshID += 1 }
+        }
         .overlay(alignment: .top) {
             if copyNotification != nil {
                 Label("Copied", systemImage: "checkmark")

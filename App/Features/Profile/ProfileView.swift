@@ -18,6 +18,8 @@ struct ProfileView: View {
     @State private var showsSignOutConfirmation = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
+    @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
+    @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var galleryColumns = 2
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
     @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
@@ -55,6 +57,12 @@ struct ProfileView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                Picker("Gallery Columns", selection: $galleryColumns) {
+                    Text("2 Columns").tag(2)
+                    Text("3 Columns").tag(3)
+                }
+                .tint(theme.accentColor)
+                .id("gallery-columns-\(theme.rawValue)")
                 Picker("Page Turn Method", selection: $pageTurnMode) {
                     Text("Tap Left or Right").tag(PageTurnMode.tap)
                     Text("Swipe Left or Right").tag(PageTurnMode.swipe)
@@ -67,6 +75,7 @@ struct ProfileView: View {
                 ))
                 .disabled(pageTurnMode != .swipe)
                 Toggle("Read Clipboard", isOn: $readsClipboard)
+                Toggle("Show Related Content", isOn: $showsRelatedGalleries)
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
                 }

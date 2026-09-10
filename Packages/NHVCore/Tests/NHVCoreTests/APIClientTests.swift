@@ -72,6 +72,19 @@ let emptyPage = #"{"result":[],"num_pages":0}"#
     #expect(request.url?.query == "include=favorite")
 }
 
+@Test func relatedGalleriesUsesDocumentedEndpointAndDecodesListItems() async throws {
+    let transport = StubTransport(#"{"result":[{"id":42,"media_id":"2","english_title":"Related fixture","thumbnail":"/galleries/2/thumb.webp","thumbnail_width":200,"thumbnail_height":300,"num_pages":12,"num_favorites":34}]}"#)
+    let result = try await makeAPI(transport).relatedGalleries(id: 7)
+    let item = try #require(result.first)
+    #expect(item.id == 42)
+    #expect(item.englishTitle == "Related fixture")
+    #expect(item.numPages == 12)
+    #expect(item.numFavorites == 34)
+    let request = try #require(await transport.captured().first)
+    #expect(request.url?.path == "/api/v2/galleries/7/related")
+    #expect(request.url?.query == nil)
+}
+
 @Test func favoriteWritesUseExplicitMethods() async throws {
     let transport = StubTransport(#"{"favorited":true,"num_favorites":8}"#)
     let api = try makeAPI(transport)

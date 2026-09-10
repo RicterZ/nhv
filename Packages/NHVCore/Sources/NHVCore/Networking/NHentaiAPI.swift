@@ -26,6 +26,12 @@ public struct NHentaiAPI: Sendable {
         return try await client.send(["galleries", String(id)], query: [.init(name: "include", value: "favorite")])
     }
 
+    public func relatedGalleries(id: Int) async throws -> [GallerySummary] {
+        try validateID(id)
+        let response: RelatedGalleriesResponse = try await client.send(["galleries", String(id), "related"])
+        return response.result
+    }
+
     public func search(query: String, sort: GallerySort = .date, page: Int = 1) async throws -> PaginatedResponse<GallerySummary> {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw APIError.invalidInput(.emptySearch)

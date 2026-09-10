@@ -34,6 +34,7 @@ private struct GalleryFeedView<Header: View>: View {
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
     @State private var isRefreshing = false
+    @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var galleryColumns = 2
 
     init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore,
          preloadedFavorites: FavoritesFeedStore? = nil, @ViewBuilder header: @escaping () -> Header) {
@@ -84,7 +85,8 @@ private struct GalleryFeedView<Header: View>: View {
 
                 if !displayedItems.isEmpty {
                     GalleryGrid(galleries: displayedItems, api: api, showsFavoriteCount: showsFavoriteCount,
-                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true)
+                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true,
+                        columnCount: galleryColumns == 3 ? 3 : 2, usesCompactCards: galleryColumns == 3)
                 }
 
                 if let error = feed.error {
@@ -151,9 +153,16 @@ struct GalleryGrid: View {
     var recordsBrowsingHistory = true
     var prefersResultFavoriteCount = false
     var respectsNSFWSetting = false
+    var columnCount: Int? = nil
+    var usesCompactCards = false
     @Environment(AppNavigation.self) private var navigation
     @Environment(MediaStore.self) private var media
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
+    private var columns: [GridItem] {
+        if let columnCount {
+            return Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: columnCount)
+        }
+        return [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 24) {
@@ -161,6 +170,7 @@ struct GalleryGrid: View {
                 GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail, galleryID: gallery.id), api: api,
                     showsFavoriteCount: showsFavoriteCount, recordsBrowsingHistory: recordsBrowsingHistory,
                     prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: respectsNSFWSetting,
+                    usesCompactLayout: usesCompactCards,
                     openDetail: { navigation.openGallery(gallery, recordsVisit: recordsBrowsingHistory) })
             }
         }
@@ -175,6 +185,7 @@ private struct GalleryCard: View {
     let recordsBrowsingHistory: Bool
     let prefersResultFavoriteCount: Bool
     let respectsNSFWSetting: Bool
+    let usesCompactLayout: Bool
     let openDetail: () -> Void
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @Environment(CoverPreview.self) private var preview
@@ -226,7 +237,7 @@ private struct GalleryCard: View {
 
             Button(action: openDetail) {
                 GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
-                    .font(.subheadline.weight(.medium))
+                    .font((usesCompactLayout ? Font.caption : Font.subheadline).weight(.medium))
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -239,7 +250,19 @@ private struct GalleryCard: View {
     private var cover: some View {
         GalleryCover(url: url, fillsStandardCoverWidth: true)
             .frame(maxWidth: .infinity)
-            .frame(height: 240)
+            .modifier(GalleryCardCoverSize(compact: usesCompactLayout))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct GalleryCardCoverSize: ViewModifier {
+    let compact: Bool
+
+    func body(content: Content) -> some View {
+        if compact {
+            content.aspectRatio(2 / 3, contentMode: .fit)
+        } else {
+            content.frame(height: 240)
+        }
     }
 }

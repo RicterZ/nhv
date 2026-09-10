@@ -112,3 +112,7 @@ public struct FavoriteResponse: Decodable, Sendable {
     public let favorited: Bool
     public let numFavorites: Int?
 }
+
+public struct RelatedGalleriesResponse: Decodable, Sendable {
+    public let result: [GallerySummary]
+}
