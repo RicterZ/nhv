@@ -2021,6 +2021,29 @@
         }
       }
     },
+    "Automatically open gallery links from the clipboard." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically open gallery links from the clipboard."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリップボード内の作品リンクを自動的に開きます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启后可自动打开剪贴板中的作品链接。"
+          }
+        }
+      }
+    },
     "Miscellaneous" : {
       "extractionState" : "manual",
       "localizations" : {

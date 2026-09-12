@@ -88,7 +88,15 @@ struct ProfileView: View {
                 Toggle("Related Recommendations", isOn: $showsRelatedGalleries)
             }
             Section("Miscellaneous") {
-                Toggle("Read Clipboard", isOn: $readsClipboard)
+                Toggle(isOn: $readsClipboard) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Read Clipboard")
+                        Text("Automatically open gallery links from the clipboard.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
                 }
