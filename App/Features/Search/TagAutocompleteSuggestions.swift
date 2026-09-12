@@ -53,15 +53,29 @@ struct TagAutocompleteSuggestions: View {
         }
         .scrollIndicators(.hidden)
         .frame(height: containerHeight)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.primary.opacity(0.1), lineWidth: 0.5)
-        }
-        .shadow(color: .black.opacity(0.14), radius: 12, y: 5)
+        .modifier(TagAutocompleteGlass())
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .padding(.bottom, 1)
+    }
+}
+
+private struct TagAutocompleteGlass: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(.regularMaterial, in: shape)
+                .overlay {
+                    shape
+                        .stroke(.primary.opacity(0.1), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.14), radius: 12, y: 5)
+        }
     }
 }
 

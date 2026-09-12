@@ -190,6 +190,7 @@ private struct GalleryCard: View {
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
     @Environment(CoverPreview.self) private var preview
+    @Environment(\.colorScheme) private var colorScheme
 
     private var hidesCover: Bool { respectsNSFWSetting && !nsfwEnabled }
     private var displayedTitle: String {
@@ -257,7 +258,11 @@ private struct GalleryCard: View {
     }
 
     private var cover: some View {
-        GalleryCover(url: url, fillsStandardCoverWidth: true)
+        GalleryCover(
+            url: url,
+            fillsStandardCoverWidth: true,
+            letterboxColor: colorScheme == .light ? .black : .white
+        )
             .frame(maxWidth: .infinity)
             .modifier(GalleryCardCoverSize(compact: usesCompactLayout))
             .clipShape(RoundedRectangle(cornerRadius: 8))
