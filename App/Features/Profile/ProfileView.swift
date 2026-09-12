@@ -21,6 +21,7 @@ struct ProfileView: View {
     @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
     @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var galleryColumns = 2
     @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
+    @AppStorage(ContentDisplayPreference.translatesTagsKey) private var translatesTags = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
     @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
@@ -49,6 +50,9 @@ struct ProfileView: View {
                 }
                 .tint(theme.accentColor)
                 .id("language-\(theme.rawValue)")
+                if language.selection == .simplifiedChinese {
+                    Toggle("Tag Translation", isOn: $translatesTags)
+                }
                 Toggle(isOn: $language.filterGalleries) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Language Filter")

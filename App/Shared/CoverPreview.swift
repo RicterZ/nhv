@@ -7,6 +7,7 @@ enum ContentDisplayPreference {
     static let relatedKey = "content.showsRelatedGalleries"
     static let galleryColumnsKey = "content.galleryColumns"
     static let prefersJapaneseTitlesKey = "content.prefersJapaneseTitles"
+    static let translatesTagsKey = "content.translatesTags"
 }
 
 @MainActor @Observable

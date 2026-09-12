@@ -11,7 +11,9 @@ struct MainTabView: View {
     @State private var languages = GalleryLanguageStore()
     @State private var navigation: AppNavigation
     @State private var coverPreview = CoverPreview()
+    @State private var tagTranslations = TagTranslationStore()
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
+    @AppStorage(ContentDisplayPreference.translatesTagsKey) private var translatesTags = false
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
@@ -29,6 +31,10 @@ struct MainTabView: View {
 
     private var canReadClipboard: Bool {
         isReady && scenePhase == .active && readsClipboard && !navigation.isReading
+    }
+
+    private var shouldPrepareTagTranslations: Bool {
+        language.selection == .simplifiedChinese && translatesTags
     }
 
     var body: some View {
@@ -70,9 +76,13 @@ struct MainTabView: View {
         .environment(media)
         .environment(favorites)
         .environment(languages)
+        .environment(tagTranslations)
         .tint(theme.accentColor)
         .preferredColorScheme(theme.colorScheme)
         .task { await favoritesFeed.prepare() }
+        .task(id: shouldPrepareTagTranslations) {
+            if shouldPrepareTagTranslations { await tagTranslations.prepare() }
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await favorites.synchronize(api: account.api)

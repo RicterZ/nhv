@@ -12,6 +12,8 @@ struct GalleryDetailView: View {
     @Environment(MediaStore.self) private var media
     @Environment(FavoriteStore.self) private var favorites
     @Environment(GalleryLanguageStore.self) private var languages
+    @Environment(TagTranslationStore.self) private var tagTranslations
+    @Environment(LanguagePreference.self) private var language
     @Environment(\.locale) private var locale
     @State private var gallery: GalleryDetail?
     @State private var error: (any Error)?
@@ -24,6 +26,7 @@ struct GalleryDetailView: View {
     @State private var relatedRefreshID = 0
     @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
     @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
+    @AppStorage(ContentDisplayPreference.translatesTagsKey) private var translatesTags = false
 
     init(api: NHentaiAPI, summary: GallerySummary, recordsBrowsingHistory: Bool = true) {
         self.api = api
@@ -288,7 +291,7 @@ struct GalleryDetailView: View {
                                 navigation.push(.init(.search(tag.searchQuery)))
                             } label: {
                                 HStack(spacing: 4) {
-                                    Text(verbatim: tag.name)
+                                    Text(verbatim: displayedName(for: tag))
                                         .fixedSize(horizontal: false, vertical: true)
                                     Text(tag.count, format: .number.notation(.compactName))
                                         .font(.caption2)
@@ -319,5 +322,10 @@ struct GalleryDetailView: View {
         case "tag": Text("Tags")
         default: Text(verbatim: type)
         }
+    }
+
+    private func displayedName(for tag: Tag) -> String {
+        guard language.selection == .simplifiedChinese, translatesTags else { return tag.name }
+        return tagTranslations.displayName(for: tag)
     }
 }

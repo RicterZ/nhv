@@ -2734,6 +2734,29 @@
         }
       }
     },
+    "Tag Translation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag Translation"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タグ翻訳"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标签翻译"
+          }
+        }
+      }
+    },
     "Tag result count must be between 1 and 50." : {
       "extractionState" : "manual",
       "localizations" : {
