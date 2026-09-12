@@ -14,6 +14,8 @@ struct ReaderView: View {
     @State private var resetID = 0
     @State private var dismissalOffset: CGFloat = 0
     @State private var isDismissing = false
+    @State private var edgeExitOffset: CGFloat = 0
+    @State private var isClosingEdge = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
@@ -39,6 +41,7 @@ struct ReaderView: View {
                     doubleTapZoomEnabled: doubleTapZoom,
                     scrollsVertically: pageTurnMode.scrollsVertically,
                     isDismissing: isDismissing,
+                    isClosing: isClosingEdge,
                     selectPage: { turnPage($0 - index) },
                     dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
                     .offset(y: pageTurnMode.scrollsVertically ? 0 : dismissalOffset)
@@ -84,6 +87,7 @@ struct ReaderView: View {
                 .padding(16)
             }
         }
+        .offset(y: edgeExitOffset)
         .presentationBackground(.clear)
         .foregroundStyle(.white)
         .buttonStyle(.plain)
@@ -130,8 +134,26 @@ struct ReaderView: View {
     }
 
     private func finishDismissal(_ close: Bool) {
-        if close { dismiss() }
-        else {
+        if close, pageTurnMode.scrollsVertically {
+            guard !isClosingEdge else { return }
+            isClosingEdge = true
+            let direction: CGFloat = dismissalOffset < 0 ? -1 : 1
+            if reduceMotion {
+                dismiss()
+            } else {
+                withAnimation(.easeOut(duration: 0.24)) {
+                    edgeExitOffset = direction * 2_000
+                }
+                Task { @MainActor in
+                    do { try await Task.sleep(for: .seconds(0.24)) } catch { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { dismiss() }
+                }
+            }
+        } else if close {
+            dismiss()
+        } else {
             withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) {
                 dismissalOffset = 0
             } completion: {

@@ -6,6 +6,8 @@ struct SearchView: View {
     let stateKey: String
     @Environment(AppNavigation.self) private var navigation
     @Environment(LanguagePreference.self) private var language
+    @Environment(TagTranslationStore.self) private var tagTranslations
+    @AppStorage(ContentDisplayPreference.translatesTagsKey) private var translatesTags = false
     @State private var input = ""
     @State private var terms: [String] = []
     @State private var sort = GallerySort.date
@@ -13,6 +15,8 @@ struct SearchView: View {
     @State private var completionRequest: SearchCompletionRequest?
     @State private var history = SearchHistory()
     @State private var showsInvalidID = false
+    @State private var selectedTagSuggestion: TagTranslationStore.Suggestion?
+    @State private var tagSuggestions: [TagTranslationStore.Suggestion] = []
 
     init(api: NHentaiAPI, stateKey: String = "root", savedState: AppNavigation.SearchState = .init()) {
         self.stateKey = stateKey
@@ -23,6 +27,13 @@ struct SearchView: View {
     }
 
     private var query: String { terms.joined(separator: " ") }
+    private var usesTranslatedTags: Bool {
+        language.selection == .simplifiedChinese && translatesTags
+    }
+    private var tagSuggestionRequest: TagSuggestionRequest {
+        TagSuggestionRequest(input: input, includesTranslations: usesTranslatedTags,
+            isPresented: isSearchPresented, isReady: tagTranslations.isReady)
+    }
 
     var body: some View {
         // Keep the search controller and its accessory attached to one stable
@@ -37,6 +48,16 @@ struct SearchView: View {
                             input = completion.text
                             completionRequest = SearchCompletionRequest(completion: completion)
                         }
+                    }
+                }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if !tagSuggestions.isEmpty {
+                        TagAutocompleteSuggestions(suggestions: tagSuggestions, showsTranslations: usesTranslatedTags) {
+                            input = $0.displayQuery
+                            selectedTagSuggestion = $0
+                            tagSuggestions = []
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }
             } else if terms.isEmpty {
@@ -57,6 +78,25 @@ struct SearchView: View {
         .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
         .modifier(SearchCompletionSelection(request: completionRequest))
         .background(SearchSortAccessory(selection: $sort, text: $input).frame(width: 0, height: 0))
+        .onChange(of: input) { _, value in
+            if selectedTagSuggestion?.displayQuery != value { selectedTagSuggestion = nil }
+        }
+        .task(id: tagSuggestionRequest) {
+            guard tagSuggestionRequest.shouldSearch,
+                  selectedTagSuggestion?.displayQuery != input
+            else {
+                tagSuggestions = []
+                return
+            }
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            tagSuggestions = tagTranslations.suggestions(
+                for: input, includesTranslations: usesTranslatedTags)
+        }
         .onChange(of: AppNavigation.SearchState(terms: terms, input: input, sort: sort)) { _, state in
             navigation.saveSearch(state, key: stateKey)
         }
@@ -67,11 +107,18 @@ struct SearchView: View {
         }
         .onSubmit(of: .search) {
             if openDirectGallery(input) { return }
-            for term in SearchTerms.split(input) where !terms.contains(term) {
+            let submittedInput: String
+            if let selectedTagSuggestion, selectedTagSuggestion.displayQuery == input {
+                submittedInput = selectedTagSuggestion.searchQuery
+            } else {
+                submittedInput = tagTranslations.resolvedQuery(for: input, includesTranslations: usesTranslatedTags)
+            }
+            for term in SearchTerms.split(submittedInput) where !terms.contains(term) {
                 terms.append(term)
             }
             history.record(query)
             input = ""
+            selectedTagSuggestion = nil
             completionRequest = nil
             isSearchPresented = false
         }
@@ -83,6 +130,7 @@ struct SearchView: View {
             terms = SearchTerms.split(query)
             history.record(query)
             input = ""
+            selectedTagSuggestion = nil
             completionRequest = nil
             isSearchPresented = false
         }
@@ -93,6 +141,7 @@ struct SearchView: View {
             guard let id = try GalleryLink.id(in: text) ?? SearchTerms.directGalleryID(in: text) else { return false }
             history.record("id:\(id)")
             input = ""
+            selectedTagSuggestion = nil
             completionRequest = nil
             isSearchPresented = false
             navigation.openGallery(id: id)
@@ -108,5 +157,16 @@ struct SearchView: View {
                 terms.removeAll { $0 == term }
             }
         }
+    }
+}
+
+private struct TagSuggestionRequest: Equatable {
+    let input: String
+    let includesTranslations: Bool
+    let isPresented: Bool
+    let isReady: Bool
+
+    var shouldSearch: Bool {
+        isPresented && isReady && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

@@ -9,6 +9,7 @@ struct PagedReaderView: UIViewRepresentable {
     var doubleTapZoomEnabled = false
     var scrollsVertically = false
     var isDismissing = false
+    var isClosing = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
     var dismissalChanged: ((CGFloat) -> Void)?
@@ -23,6 +24,7 @@ struct PagedReaderView: UIViewRepresentable {
         viewport.backgroundColor = isDismissing ? .clear : gapColor
         view.backgroundColor = isDismissing ? .clear : gapColor
         view.isDismissing = isDismissing
+        view.isClosing = isClosing
         viewport.scrollsVertically = scrollsVertically
         view.scrollsVertically = scrollsVertically
         view.dismissalChanged = dismissalChanged
@@ -81,6 +83,12 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
+    var isClosing = false {
+        didSet {
+            guard oldValue != isClosing else { return }
+            if isClosing { isScrollEnabled = false }
+        }
+    }
     var scrollsVertically = false {
         didSet {
             guard oldValue != scrollsVertically else { return }
