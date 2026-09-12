@@ -20,6 +20,7 @@ struct ProfileView: View {
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
     @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var galleryColumns = 2
+    @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
     @AppStorage(PageTurnMode.doubleTapZoomKey) private var doubleTapZoom = false
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
@@ -57,6 +58,7 @@ struct ProfileView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                Toggle("Prefer Japanese Titles", isOn: $prefersJapaneseTitles)
                 Picker("Gallery Columns", selection: $galleryColumns) {
                     Text("2 Columns").tag(2)
                     Text("3 Columns").tag(3)
@@ -66,14 +68,15 @@ struct ProfileView: View {
                 Picker("Page Turn Method", selection: $pageTurnMode) {
                     Text("Tap Left or Right").tag(PageTurnMode.tap)
                     Text("Swipe Left or Right").tag(PageTurnMode.swipe)
+                    Text("Swipe Up or Down").tag(PageTurnMode.verticalSwipe)
                 }
                 .tint(theme.accentColor)
                 .id("page-turn-\(theme.rawValue)")
                 Toggle("Double-Tap to Zoom", isOn: Binding(
-                    get: { pageTurnMode == .swipe && doubleTapZoom },
+                    get: { pageTurnMode.usesSwipePaging && doubleTapZoom },
                     set: { doubleTapZoom = $0 }
                 ))
-                .disabled(pageTurnMode != .swipe)
+                .disabled(!pageTurnMode.usesSwipePaging)
                 Toggle("Read Clipboard", isOn: $readsClipboard)
                 Toggle("Show Related Content", isOn: $showsRelatedGalleries)
                 Toggle(isOn: $nsfwEnabled) {

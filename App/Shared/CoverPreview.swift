@@ -6,6 +6,7 @@ enum ContentDisplayPreference {
     static let nsfwKey = "content.nsfwEnabled"
     static let relatedKey = "content.showsRelatedGalleries"
     static let galleryColumnsKey = "content.galleryColumns"
+    static let prefersJapaneseTitlesKey = "content.prefersJapaneseTitles"
 }
 
 @MainActor @Observable

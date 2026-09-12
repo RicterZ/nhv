@@ -1768,6 +1768,29 @@
         }
       }
     },
+    "Prefer Japanese Titles" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefer Japanese Titles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日本語タイトルを優先"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优先显示日语标题"
+          }
+        }
+      }
+    },
     "Page Turn Method" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2596,6 +2619,29 @@
         }
       }
     },
+    "Swipe down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe down"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下にスワイプ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向下滑动"
+          }
+        }
+      }
+    },
     "Swipe Left or Right" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2619,6 +2665,29 @@
         }
       }
     },
+    "Swipe Up or Down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe Up or Down"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下にスワイプ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下滑动"
+          }
+        }
+      }
+    },
     "Swipe right" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2638,6 +2707,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "向右滑动"
+          }
+        }
+      }
+    },
+    "Swipe up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe up"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上にスワイプ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向上滑动"
           }
         }
       }

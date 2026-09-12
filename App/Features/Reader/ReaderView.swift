@@ -33,10 +33,11 @@ struct ReaderView: View {
             Color.black.opacity(1 - min(0.8, dismissalOffset / 400)).ignoresSafeArea()
             let pageURLs = urls
             let url = pageURLs.indices.contains(index) ? pageURLs[index] : nil
-            if pageTurnMode == .swipe {
+            if pageTurnMode.usesSwipePaging {
                 PagedReaderView(images: pageURLs.map { $0.flatMap { media.reader.images[$0] } },
                     index: index, resetID: resetID, isZoomed: $isZoomed,
                     doubleTapZoomEnabled: doubleTapZoom,
+                    scrollsVertically: pageTurnMode.scrollsVertically,
                     isDismissing: isDismissing,
                     selectPage: { turnPage($0 - index) },
                     dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)

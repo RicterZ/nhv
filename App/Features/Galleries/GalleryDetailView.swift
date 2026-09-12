@@ -23,6 +23,7 @@ struct GalleryDetailView: View {
     @State private var openedAt = Date()
     @State private var relatedRefreshID = 0
     @AppStorage(ContentDisplayPreference.relatedKey) private var showsRelatedGalleries = true
+    @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
 
     init(api: NHentaiAPI, summary: GallerySummary, recordsBrowsingHistory: Bool = true) {
         self.api = api
@@ -215,16 +216,21 @@ struct GalleryDetailView: View {
     }
 
     private func galleryInformation(_ gallery: GalleryDetail) -> some View {
-        VStack(alignment: .leading, spacing: 24) {
+        let japaneseTitle = gallery.title.japanese?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let usesJapaneseTitle = prefersJapaneseTitles && japaneseTitle?.isEmpty == false
+        let primaryTitle = usesJapaneseTitle ? japaneseTitle ?? gallery.title.pretty : gallery.title.pretty
+        let secondaryTitle = usesJapaneseTitle ? gallery.title.pretty : japaneseTitle
+
+        return VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
-                GalleryTitleLabel(title: gallery.title.pretty, tagIDs: gallery.tags.map(\.id))
+                GalleryTitleLabel(title: primaryTitle, tagIDs: gallery.tags.map(\.id))
                     .font(.title2.bold())
-                    .modifier(LongPressCopy(value: gallery.title.pretty, actionName: "Copy title", onCopy: showCopied))
-                if let japanese = gallery.title.japanese, !japanese.isEmpty {
-                    Text(verbatim: japanese)
+                    .modifier(LongPressCopy(value: primaryTitle, actionName: "Copy title", onCopy: showCopied))
+                if let secondaryTitle, !secondaryTitle.isEmpty, secondaryTitle != primaryTitle {
+                    Text(verbatim: secondaryTitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .modifier(LongPressCopy(value: japanese, actionName: "Copy subtitle", onCopy: showCopied))
+                        .modifier(LongPressCopy(value: secondaryTitle, actionName: "Copy subtitle", onCopy: showCopied))
                 }
             }
 

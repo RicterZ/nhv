@@ -7,6 +7,7 @@ struct PagedReaderView: UIViewRepresentable {
     let resetID: Int
     @Binding var isZoomed: Bool
     var doubleTapZoomEnabled = false
+    var scrollsVertically = false
     var isDismissing = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
@@ -22,6 +23,8 @@ struct PagedReaderView: UIViewRepresentable {
         viewport.backgroundColor = isDismissing ? .clear : gapColor
         view.backgroundColor = isDismissing ? .clear : gapColor
         view.isDismissing = isDismissing
+        viewport.scrollsVertically = scrollsVertically
+        view.scrollsVertically = scrollsVertically
         view.dismissalChanged = dismissalChanged
         view.dismissalEnded = dismissalEnded
         view.selectPage = selectPage
@@ -36,9 +39,15 @@ struct PagedReaderView: UIViewRepresentable {
 }
 
 /// The native paging stride includes a gutter outside the visible viewport.
-/// Each image still gets the full screen width when its page is at rest.
+/// Each image still fills the viewport on its non-paging axis when at rest.
 final class ReaderPagerViewport: UIView {
     let pager = ReaderPagingView()
+    var scrollsVertically = false {
+        didSet {
+            guard oldValue != scrollsVertically else { return }
+            setNeedsLayout()
+        }
+    }
 
     init() {
         super.init(frame: .zero)
@@ -51,7 +60,9 @@ final class ReaderPagerViewport: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        pager.frame = CGRect(x: 0, y: 0, width: bounds.width + ReaderPagingView.pageSpacing, height: bounds.height)
+        pager.frame = scrollsVertically
+            ? CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height + ReaderPagingView.pageSpacing)
+            : CGRect(x: 0, y: 0, width: bounds.width + ReaderPagingView.pageSpacing, height: bounds.height)
     }
 }
 
@@ -68,6 +79,15 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
+    var scrollsVertically = false {
+        didSet {
+            guard oldValue != scrollsVertically else { return }
+            lastSize = .zero
+            for page in pages.values { page.scroll.pullToDismissEnabled = !scrollsVertically }
+            updateIndicators()
+            setNeedsLayout()
+        }
+    }
     var isDismissing = false {
         didSet {
             guard oldValue != isDismissing else { return }
@@ -91,6 +111,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
         contentInsetAdjustmentBehavior = .never
         backgroundColor = .black
         panGestureRecognizer.maximumNumberOfTouches = 1
+        updateIndicators()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -102,7 +123,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
             selectedIndex = index
             isScrollEnabled = true
             zoomChanged?(false)
-            setContentOffset(CGPoint(x: CGFloat(index) * bounds.width, y: 0), animated: false)
+            setContentOffset(offset(for: index), animated: false)
         }
         updatePages()
         if lastResetID != resetID {
@@ -116,14 +137,19 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
         super.layoutSubviews()
         let size = bounds.size
         guard size.width > 0, size.height > 0 else { return }
-        contentSize = CGSize(width: size.width * CGFloat(images.count), height: size.height)
+        contentSize = scrollsVertically
+            ? CGSize(width: size.width, height: size.height * CGFloat(images.count))
+            : CGSize(width: size.width * CGFloat(images.count), height: size.height)
         for (index, page) in pages {
-            page.frame = CGRect(x: CGFloat(index) * size.width, y: 0,
-                width: max(0, size.width - Self.pageSpacing), height: size.height)
+            page.frame = scrollsVertically
+                ? CGRect(x: 0, y: CGFloat(index) * size.height,
+                    width: size.width, height: max(0, size.height - Self.pageSpacing))
+                : CGRect(x: CGFloat(index) * size.width, y: 0,
+                    width: max(0, size.width - Self.pageSpacing), height: size.height)
         }
         if lastSize != size {
             lastSize = size
-            setContentOffset(CGPoint(x: CGFloat(selectedIndex) * size.width, y: 0), animated: false)
+            setContentOffset(offset(for: selectedIndex), animated: false)
         }
     }
 
@@ -151,6 +177,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
             page.setImage(images[index])
             page.scroll.backgroundColor = isDismissing ? .clear : .black
             page.scroll.doubleTapZoomEnabled = doubleTapZoomEnabled
+            page.scroll.pullToDismissEnabled = !scrollsVertically
         }
     }
 
@@ -161,8 +188,10 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     }
 
     private func finishPaging() {
-        guard bounds.width > 0, !images.isEmpty else { return }
-        let next = min(images.count - 1, max(0, Int((contentOffset.x / bounds.width).rounded())))
+        let stride = scrollsVertically ? bounds.height : bounds.width
+        guard stride > 0, !images.isEmpty else { return }
+        let position = scrollsVertically ? contentOffset.y : contentOffset.x
+        let next = min(images.count - 1, max(0, Int((position / stride).rounded())))
         guard next != selectedIndex else { return }
         pages[selectedIndex]?.scroll.setZoomScale(1, animated: false)
         selectedIndex = next
@@ -171,6 +200,19 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
         isScrollEnabled = true
         zoomChanged?(false)
         selectPage?(next)
+    }
+
+    private func offset(for index: Int) -> CGPoint {
+        scrollsVertically
+            ? CGPoint(x: 0, y: CGFloat(index) * bounds.height)
+            : CGPoint(x: CGFloat(index) * bounds.width, y: 0)
+    }
+
+    private func updateIndicators() {
+        showsHorizontalScrollIndicator = false
+        showsVerticalScrollIndicator = false
+        alwaysBounceHorizontal = !scrollsVertically
+        alwaysBounceVertical = scrollsVertically
     }
 }
 

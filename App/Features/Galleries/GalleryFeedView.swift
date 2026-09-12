@@ -188,9 +188,18 @@ private struct GalleryCard: View {
     let usesCompactLayout: Bool
     let openDetail: () -> Void
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
+    @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
     @Environment(CoverPreview.self) private var preview
 
     private var hidesCover: Bool { respectsNSFWSetting && !nsfwEnabled }
+    private var displayedTitle: String {
+        if prefersJapaneseTitles,
+           let japaneseTitle = gallery.japaneseTitle?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !japaneseTitle.isEmpty {
+            return japaneseTitle
+        }
+        return gallery.englishTitle
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -203,12 +212,12 @@ private struct GalleryCard: View {
                         .overlay {
                             CoverHoldGesture(open: openDetail, preview: { shows in
                                 if shows {
-                                    preview.show(.init(id: gallery.id, url: url, title: gallery.englishTitle))
+                                    preview.show(.init(id: gallery.id, url: url, title: displayedTitle))
                                 } else { preview.dismiss(id: gallery.id) }
                             })
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text(verbatim: gallery.englishTitle))
+                        .accessibilityLabel(Text(verbatim: displayedTitle))
                         .accessibilityHint(Text("Hold to preview cover"))
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { openDetail() }
@@ -236,7 +245,7 @@ private struct GalleryCard: View {
             }
 
             Button(action: openDetail) {
-                GalleryTitleLabel(title: gallery.englishTitle, tagIDs: gallery.tagIds)
+                GalleryTitleLabel(title: displayedTitle, tagIDs: gallery.tagIds)
                     .font((usesCompactLayout ? Font.caption : Font.subheadline).weight(.medium))
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)

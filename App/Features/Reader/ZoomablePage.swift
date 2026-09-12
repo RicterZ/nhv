@@ -55,6 +55,12 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
             updatePanning()
         }
     }
+    var pullToDismissEnabled = true {
+        didSet {
+            guard oldValue != pullToDismissEnabled else { return }
+            dismissalPan.isEnabled = pullToDismissEnabled
+        }
+    }
 
     init() {
         super.init(frame: .zero)
@@ -132,7 +138,7 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
     }
 
     @objc private func doubleTapped(_ gesture: UITapGestureRecognizer) {
-        guard pageTurnMode == .swipe, doubleTapZoomEnabled,
+        guard pageTurnMode.usesSwipePaging, doubleTapZoomEnabled,
               pageImage.image != nil, !isZooming else { return }
         if zoomScale > 1.01 {
             setZoomScale(1, animated: true)
@@ -147,6 +153,7 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === dismissalPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
+        guard pullToDismissEnabled else { return false }
         let velocity = dismissalPan.velocity(in: window)
         return dismissalEnded != nil && zoomScale <= 1.01 && !isZooming
             && velocity.y > 0 && velocity.y > abs(velocity.x) * 1.2
@@ -165,7 +172,7 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
 
     private func updateTapGestures() {
         pageTap.isEnabled = pageTurnMode == .tap
-        zoomTap.isEnabled = pageTurnMode == .swipe && doubleTapZoomEnabled
+        zoomTap.isEnabled = pageTurnMode.usesSwipePaging && doubleTapZoomEnabled
         // Mutually exclusive: tap-to-turn never waits for a second tap.
     }
 

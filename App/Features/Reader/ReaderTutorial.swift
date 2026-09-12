@@ -16,15 +16,31 @@ struct ReaderTutorial: View {
                         .font(.title2.bold())
                         .accessibilityAddTraits(.isHeader)
 
-                    HStack(alignment: .top, spacing: 0) {
-                        pageHint(title: "Previous page", caption: pageTurnMode == .tap ? "Tap the left half" : "Swipe right",
-                            icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.left" : "arrow.right")
-                        Rectangle()
-                            .fill(.white.opacity(0.25))
-                            .frame(width: 1, height: 120)
-                            .accessibilityHidden(true)
-                        pageHint(title: "Next page", caption: pageTurnMode == .tap ? "Tap the right half" : "Swipe left",
-                            icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.right" : "arrow.left")
+                    Group {
+                        if pageTurnMode.scrollsVertically {
+                            VStack(spacing: 16) {
+                                pageHint(title: "Previous page", caption: "Swipe down",
+                                    icon: "hand.draw", arrow: "arrow.down")
+                                Rectangle()
+                                    .fill(.white.opacity(0.25))
+                                    .frame(maxWidth: 280)
+                                    .frame(height: 1)
+                                    .accessibilityHidden(true)
+                                pageHint(title: "Next page", caption: "Swipe up",
+                                    icon: "hand.draw", arrow: "arrow.up")
+                            }
+                        } else {
+                            HStack(alignment: .top, spacing: 0) {
+                                pageHint(title: "Previous page", caption: pageTurnMode == .tap ? "Tap the left half" : "Swipe right",
+                                    icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.left" : "arrow.right")
+                                Rectangle()
+                                    .fill(.white.opacity(0.25))
+                                    .frame(width: 1, height: 120)
+                                    .accessibilityHidden(true)
+                                pageHint(title: "Next page", caption: pageTurnMode == .tap ? "Tap the right half" : "Swipe left",
+                                    icon: pageTurnMode == .tap ? "hand.point.up.left" : "hand.draw", arrow: pageTurnMode == .tap ? "arrow.right" : "arrow.left")
+                            }
+                        }
                     }
                     .padding(.vertical, 12)
 
