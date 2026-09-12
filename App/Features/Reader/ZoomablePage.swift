@@ -8,7 +8,7 @@ struct ZoomablePage: UIViewRepresentable {
     var pageTurnMode = PageTurnMode.tap
     let turnPage: (Int) -> Void
     var dismissalChanged: ((CGFloat) -> Void)?
-    var dismissalEnded: ((Bool) -> Void)?
+    var dismissalEnded: ((Bool, CGFloat, CGFloat) -> Void)?
 
     func makeUIView(context: Context) -> PageScrollView {
         let view = PageScrollView()
@@ -36,7 +36,7 @@ struct ZoomablePage: UIViewRepresentable {
 
 final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     var dismissalChanged: ((CGFloat) -> Void)?
-    var dismissalEnded: ((Bool) -> Void)?
+    var dismissalEnded: ((Bool, CGFloat, CGFloat) -> Void)?
     private(set) var dismissalPan: UIPanGestureRecognizer!
     private let pageImage = UIImageView()
     private var fittedBounds = CGSize.zero
@@ -164,8 +164,13 @@ final class PageScrollView: UIScrollView, UIScrollViewDelegate, UIGestureRecogni
         switch gesture.state {
         case .began, .changed: dismissalChanged?(distance)
         case .ended:
-            dismissalEnded?(distance > 120 || (distance > 30 && gesture.velocity(in: window).y > 900))
-        case .cancelled, .failed: dismissalEnded?(false)
+            let velocity = gesture.velocity(in: window).y
+            dismissalEnded?(
+                distance > 120 || (distance > 30 && velocity > 900),
+                bounds.height,
+                velocity
+            )
+        case .cancelled, .failed: dismissalEnded?(false, bounds.height, 0)
         default: break
         }
     }

@@ -13,9 +13,9 @@ struct PagedReaderView: UIViewRepresentable {
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
     var dismissalChanged: ((CGFloat) -> Void)?
-    var dismissalEnded: ((Bool) -> Void)?
+    var dismissalEnded: ((Bool, CGFloat, CGFloat) -> Void)?
     var horizontalDismissalChanged: ((CGFloat) -> Void)?
-    var horizontalDismissalEnded: ((Bool) -> Void)?
+    var horizontalDismissalEnded: ((Bool, CGFloat) -> Void)?
 
     func makeUIView(context: Context) -> ReaderPagerViewport { ReaderPagerViewport() }
 
@@ -86,9 +86,9 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
     private var horizontalDismissalPan: UIPanGestureRecognizer!
     var selectPage: ((Int) -> Void)?
     var dismissalChanged: ((CGFloat) -> Void)?
-    var dismissalEnded: ((Bool) -> Void)?
+    var dismissalEnded: ((Bool, CGFloat, CGFloat) -> Void)?
     var horizontalDismissalChanged: ((CGFloat) -> Void)?
-    var horizontalDismissalEnded: ((Bool) -> Void)?
+    var horizontalDismissalEnded: ((Bool, CGFloat) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
     var isClosing = false {
         didSet {
@@ -158,9 +158,12 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
             horizontalDismissalChanged?(distance)
         case .ended:
             let velocity = gesture.velocity(in: window).x
-            horizontalDismissalEnded?(distance > 120 || (distance > 30 && velocity > 900))
+            horizontalDismissalEnded?(
+                distance > 120 || (distance > 30 && velocity > 900),
+                bounds.width
+            )
         case .cancelled, .failed:
-            horizontalDismissalEnded?(false)
+            horizontalDismissalEnded?(false, bounds.width)
         default:
             break
         }
@@ -219,7 +222,9 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
                     self.zoomChanged?(zoomed)
                 }
                 page.scroll.dismissalChanged = { [weak self] distance in self?.dismissalChanged?(distance) }
-                page.scroll.dismissalEnded = { [weak self] close in self?.dismissalEnded?(close) }
+                page.scroll.dismissalEnded = { [weak self] close, height, velocity in
+                    self?.dismissalEnded?(close, height, velocity)
+                }
                 panGestureRecognizer.require(toFail: page.scroll.dismissalPan)
                 pages[index] = page
                 addSubview(page)
@@ -236,7 +241,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
             edgeDismissalDistance = 0
             edgeDismissalActive = false
             dismissalChanged?(0)
-            dismissalEnded?(false)
+            dismissalEnded?(false, bounds.height, 0)
         } else {
             finishPaging()
         }
@@ -260,7 +265,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
         dismissalChanged?(distance)
         if distance == 0, !isDragging {
             edgeDismissalActive = false
-            dismissalEnded?(false)
+            dismissalEnded?(false, bounds.height, 0)
         }
     }
 
@@ -273,10 +278,10 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecog
             if close {
                 edgeDismissalDistance = 0
                 edgeDismissalActive = false
-                dismissalEnded?(true)
+                dismissalEnded?(true, bounds.height, velocity)
             } else if distance == 0 {
                 edgeDismissalActive = false
-                dismissalEnded?(false)
+                dismissalEnded?(false, bounds.height, velocity)
             }
             return
         }

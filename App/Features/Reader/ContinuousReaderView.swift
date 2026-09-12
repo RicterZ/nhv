@@ -14,7 +14,7 @@ struct ContinuousReaderView: UIViewRepresentable {
     let selectPage: (Int) -> Void
     let scrollingChanged: (Bool) -> Void
     let dismissalChanged: (CGFloat) -> Void
-    let dismissalEnded: (Bool) -> Void
+    let dismissalEnded: (Bool, CGFloat) -> Void
 
     func makeUIView(context: Context) -> ContinuousReaderScrollView {
         ContinuousReaderScrollView()
@@ -56,7 +56,7 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
     var selectPage: ((Int) -> Void)?
     var scrollingChanged: ((Bool) -> Void)?
     var dismissalChanged: ((CGFloat) -> Void)?
-    var dismissalEnded: ((Bool) -> Void)?
+    var dismissalEnded: ((Bool, CGFloat) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
     var doubleTapZoomEnabled = false {
         didSet { doubleTap.isEnabled = doubleTapZoomEnabled }
@@ -237,9 +237,9 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
             dismissalChanged?(distance)
         case .ended:
             let velocity = gesture.velocity(in: window).x
-            dismissalEnded?(distance > 120 || (distance > 30 && velocity > 900))
+            dismissalEnded?(distance > 120 || (distance > 30 && velocity > 900), bounds.width)
         case .cancelled, .failed:
-            dismissalEnded?(false)
+            dismissalEnded?(false, bounds.width)
         default:
             break
         }

@@ -17,6 +17,9 @@ struct ReaderView: View {
     @State private var isDismissing = false
     @State private var edgeExitOffset: CGFloat = 0
     @State private var isClosingEdge = false
+    @State private var isClosingVertically = false
+    @State private var closingBackdropOpacity: CGFloat = 1
+    @State private var closingControlsOpacity: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("reader.hasSeenTutorial") private var hasSeenTutorial = false
     @AppStorage(PageTurnMode.storageKey) private var pageTurnMode = PageTurnMode.tap
@@ -34,8 +37,11 @@ struct ReaderView: View {
     var body: some View {
         ZStack {
             let dismissalDistance = max(abs(dismissalOffset), abs(horizontalDismissalOffset))
-            Color.black.opacity(1 - min(0.8, dismissalDistance / 400)).ignoresSafeArea()
+            Color.black
+                .opacity((1 - min(0.8, dismissalDistance / 400)) * closingBackdropOpacity)
+                .ignoresSafeArea()
             readerPages(urls)
+                .offset(y: edgeExitOffset)
         }
         .overlay(alignment: .topLeading) {
             Text("\(index + 1) / \(pages.count)")
@@ -44,6 +50,7 @@ struct ReaderView: View {
                 .background(.black.opacity(0.65), in: Capsule())
                 .padding(16)
                 .accessibilityLabel(Text("Page \(index + 1) of \(pages.count)"))
+                .opacity(closingControlsOpacity)
         }
         .overlay(alignment: .topTrailing) {
             Button {
@@ -54,6 +61,7 @@ struct ReaderView: View {
             }
             .accessibilityLabel(Text("Close reader"))
             .padding(16)
+            .opacity(closingControlsOpacity)
         }
         .overlay(alignment: .bottomTrailing) {
             if isZoomed {
@@ -65,9 +73,10 @@ struct ReaderView: View {
                 }
                 .accessibilityLabel(Text("Reset zoom"))
                 .padding(16)
+                .opacity(closingControlsOpacity)
             }
         }
-        .offset(x: horizontalDismissalOffset, y: edgeExitOffset)
+        .offset(x: horizontalDismissalOffset)
         .presentationBackground(.clear)
         .foregroundStyle(.white)
         .buttonStyle(.plain)
@@ -146,7 +155,9 @@ struct ReaderView: View {
                 horizontalDismissalChanged: updateHorizontalDismissal,
                 horizontalDismissalEnded: finishHorizontalDismissal
             )
-            .offset(y: pageTurnMode.scrollsVertically ? 0 : dismissalOffset)
+            .offset(y: pageTurnMode.scrollsVertically
+                ? (isClosingVertically ? dismissalOffset : 0)
+                : dismissalOffset)
             .ignoresSafeArea()
         } else {
             let image = images.indices.contains(index) ? images[index] : nil
@@ -178,26 +189,37 @@ struct ReaderView: View {
         horizontalDismissalOffset = max(0, distance)
     }
 
-    private func finishDismissal(_ close: Bool) {
-        if close, pageTurnMode.scrollsVertically {
+    private func finishDismissal(_ close: Bool, viewportHeight: CGFloat, velocity: CGFloat) {
+        if close {
             guard !isClosingEdge else { return }
             isClosingEdge = true
+            isClosingVertically = true
             let direction: CGFloat = dismissalOffset < 0 ? -1 : 1
             if reduceMotion {
                 dismiss()
             } else {
-                withAnimation(.easeOut(duration: 0.24)) {
-                    edgeExitOffset = direction * 2_000
+                let duration = 0.38
+                let remainingDistance = max(0, viewportHeight - abs(dismissalOffset))
+                let outwardVelocity = max(0, direction * velocity)
+                let initialVelocity = min(3, outwardVelocity / max(1, remainingDistance))
+                withAnimation(.interpolatingSpring(
+                    duration: duration,
+                    bounce: 0.05,
+                    initialVelocity: initialVelocity
+                )) {
+                    edgeExitOffset = direction * remainingDistance
+                }
+                withAnimation(.easeOut(duration: 0.22)) {
+                    closingBackdropOpacity = 0
+                    closingControlsOpacity = 0
                 }
                 Task { @MainActor in
-                    do { try await Task.sleep(for: .seconds(0.24)) } catch { return }
+                    do { try await Task.sleep(for: .seconds(duration)) } catch { return }
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) { dismiss() }
                 }
             }
-        } else if close {
-            dismiss()
         } else {
             withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) {
                 dismissalOffset = 0
@@ -208,18 +230,19 @@ struct ReaderView: View {
         }
     }
 
-    private func finishHorizontalDismissal(_ close: Bool) {
+    private func finishHorizontalDismissal(_ close: Bool, viewportWidth: CGFloat) {
         if close {
             guard !isClosingEdge else { return }
             isClosingEdge = true
             if reduceMotion {
                 dismiss()
             } else {
-                withAnimation(.easeOut(duration: 0.24)) {
-                    horizontalDismissalOffset = 2_000
+                let duration = 0.26
+                withAnimation(.timingCurve(0.2, 0.8, 0.2, 1, duration: duration)) {
+                    horizontalDismissalOffset = max(horizontalDismissalOffset, viewportWidth)
                 }
                 Task { @MainActor in
-                    do { try await Task.sleep(for: .seconds(0.24)) } catch { return }
+                    do { try await Task.sleep(for: .seconds(duration)) } catch { return }
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) { dismiss() }
