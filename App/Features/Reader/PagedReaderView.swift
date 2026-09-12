@@ -14,6 +14,8 @@ struct PagedReaderView: UIViewRepresentable {
     let selectPage: (Int) -> Void
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
+    var horizontalDismissalChanged: ((CGFloat) -> Void)?
+    var horizontalDismissalEnded: ((Bool) -> Void)?
 
     func makeUIView(context: Context) -> ReaderPagerViewport { ReaderPagerViewport() }
 
@@ -29,6 +31,8 @@ struct PagedReaderView: UIViewRepresentable {
         view.scrollsVertically = scrollsVertically
         view.dismissalChanged = dismissalChanged
         view.dismissalEnded = dismissalEnded
+        view.horizontalDismissalChanged = horizontalDismissalChanged
+        view.horizontalDismissalEnded = horizontalDismissalEnded
         view.selectPage = selectPage
         view.doubleTapZoomEnabled = doubleTapZoomEnabled
         view.zoomChanged = { zoomed in
@@ -70,7 +74,7 @@ final class ReaderPagerViewport: UIView {
 
 /// Native paging supplies tracking, velocity, deceleration, and edge bounce.
 /// Only the current page and its two neighbors have zoomable views.
-final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
+final class ReaderPagingView: UIScrollView, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     static let pageSpacing: CGFloat = 20
     private var images: [UIImage?] = []
     private var pages: [Int: ReaderPageContainer] = [:]
@@ -79,9 +83,12 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     private var lastSize = CGSize.zero
     private var edgeDismissalDistance: CGFloat = 0
     private var edgeDismissalActive = false
+    private var horizontalDismissalPan: UIPanGestureRecognizer!
     var selectPage: ((Int) -> Void)?
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
+    var horizontalDismissalChanged: ((CGFloat) -> Void)?
+    var horizontalDismissalEnded: ((Bool) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
     var isClosing = false {
         didSet {
@@ -94,6 +101,7 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
             guard oldValue != scrollsVertically else { return }
             lastSize = .zero
             for page in pages.values { page.scroll.pullToDismissEnabled = !scrollsVertically }
+            horizontalDismissalPan.isEnabled = scrollsVertically
             updateIndicators()
             setNeedsLayout()
         }
@@ -121,10 +129,42 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
         contentInsetAdjustmentBehavior = .never
         backgroundColor = .black
         panGestureRecognizer.maximumNumberOfTouches = 1
+        let horizontalDismissal = UIPanGestureRecognizer(target: self, action: #selector(swipedRight(_:)))
+        horizontalDismissal.maximumNumberOfTouches = 1
+        horizontalDismissal.delegate = self
+        horizontalDismissal.isEnabled = false
+        horizontalDismissalPan = horizontalDismissal
+        addGestureRecognizer(horizontalDismissal)
+        panGestureRecognizer.require(toFail: horizontalDismissal)
         updateIndicators()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === horizontalDismissalPan else {
+            return super.gestureRecognizerShouldBegin(gestureRecognizer)
+        }
+        guard scrollsVertically, horizontalDismissalEnded != nil, !isClosing,
+              (pages[selectedIndex]?.scroll.zoomScale ?? 1) <= 1.01 else { return false }
+        let velocity = horizontalDismissalPan.velocity(in: window)
+        return velocity.x > 0 && velocity.x > abs(velocity.y) * 1.2
+    }
+
+    @objc private func swipedRight(_ gesture: UIPanGestureRecognizer) {
+        let distance = max(0, gesture.translation(in: window).x)
+        switch gesture.state {
+        case .began, .changed:
+            horizontalDismissalChanged?(distance)
+        case .ended:
+            let velocity = gesture.velocity(in: window).x
+            horizontalDismissalEnded?(distance > 120 || (distance > 30 && velocity > 900))
+        case .cancelled, .failed:
+            horizontalDismissalEnded?(false)
+        default:
+            break
+        }
+    }
 
     func update(images: [UIImage?], index: Int, resetID: Int) {
         self.images = images

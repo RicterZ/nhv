@@ -13,6 +13,7 @@ struct ReaderView: View {
     @State private var isZoomed = false
     @State private var resetID = 0
     @State private var dismissalOffset: CGFloat = 0
+    @State private var horizontalDismissalOffset: CGFloat = 0
     @State private var isDismissing = false
     @State private var edgeExitOffset: CGFloat = 0
     @State private var isClosingEdge = false
@@ -32,30 +33,9 @@ struct ReaderView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(1 - min(0.8, abs(dismissalOffset) / 400)).ignoresSafeArea()
-            let pageURLs = urls
-            let url = pageURLs.indices.contains(index) ? pageURLs[index] : nil
-            if pageTurnMode.usesSwipePaging {
-                PagedReaderView(images: pageURLs.map { $0.flatMap { media.reader.images[$0] } },
-                    index: index, resetID: resetID, isZoomed: $isZoomed,
-                    doubleTapZoomEnabled: doubleTapZoom,
-                    scrollsVertically: pageTurnMode.scrollsVertically,
-                    isDismissing: isDismissing,
-                    isClosing: isClosingEdge,
-                    selectPage: { turnPage($0 - index) },
-                    dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
-                    .offset(y: pageTurnMode.scrollsVertically ? 0 : dismissalOffset)
-                    .ignoresSafeArea()
-            } else {
-                ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed,
-                    pageTurnMode: pageTurnMode, turnPage: turnPage,
-                    dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
-                    .offset(y: dismissalOffset)
-                    .ignoresSafeArea()
-                if url.flatMap({ media.reader.images[$0] }) == nil {
-                    ProgressView().tint(.white).allowsHitTesting(false)
-                }
-            }
+            let dismissalDistance = max(abs(dismissalOffset), abs(horizontalDismissalOffset))
+            Color.black.opacity(1 - min(0.8, dismissalDistance / 400)).ignoresSafeArea()
+            readerPages(urls)
         }
         .overlay(alignment: .topLeading) {
             Text("\(index + 1) / \(pages.count)")
@@ -87,7 +67,7 @@ struct ReaderView: View {
                 .padding(16)
             }
         }
-        .offset(y: edgeExitOffset)
+        .offset(x: horizontalDismissalOffset, y: edgeExitOffset)
         .presentationBackground(.clear)
         .foregroundStyle(.white)
         .buttonStyle(.plain)
@@ -128,9 +108,69 @@ struct ReaderView: View {
         }
     }
 
+    @ViewBuilder
+    private func readerPages(_ pageURLs: [URL?]) -> some View {
+        let images = pageURLs.map { $0.flatMap { media.reader.images[$0] } }
+        if pageTurnMode.isContinuous {
+            ContinuousReaderView(
+                pages: pages,
+                images: images,
+                index: index,
+                resetID: resetID,
+                isZoomed: $isZoomed,
+                doubleTapZoomEnabled: doubleTapZoom,
+                isClosing: isClosingEdge,
+                selectPage: selectContinuousPage,
+                dismissalChanged: updateHorizontalDismissal,
+                dismissalEnded: finishHorizontalDismissal
+            )
+            .ignoresSafeArea()
+        } else if pageTurnMode.usesSwipePaging {
+            PagedReaderView(
+                images: images,
+                index: index,
+                resetID: resetID,
+                isZoomed: $isZoomed,
+                doubleTapZoomEnabled: doubleTapZoom,
+                scrollsVertically: pageTurnMode.scrollsVertically,
+                isDismissing: isDismissing,
+                isClosing: isClosingEdge,
+                selectPage: { turnPage($0 - index) },
+                dismissalChanged: updateDismissal,
+                dismissalEnded: finishDismissal,
+                horizontalDismissalChanged: updateHorizontalDismissal,
+                horizontalDismissalEnded: finishHorizontalDismissal
+            )
+            .offset(y: pageTurnMode.scrollsVertically ? 0 : dismissalOffset)
+            .ignoresSafeArea()
+        } else {
+            let image = images.indices.contains(index) ? images[index] : nil
+            ZoomablePage(
+                image: image,
+                resetID: resetID,
+                isZoomed: $isZoomed,
+                pageTurnMode: pageTurnMode,
+                turnPage: turnPage,
+                dismissalChanged: updateDismissal,
+                dismissalEnded: finishDismissal
+            )
+            .offset(y: dismissalOffset)
+            .ignoresSafeArea()
+            if image == nil {
+                ProgressView().tint(.white).allowsHitTesting(false)
+            }
+        }
+    }
+
     private func updateDismissal(_ distance: CGFloat) {
-        isDismissing = distance != 0
+        isDismissing = distance != 0 || horizontalDismissalOffset != 0
         dismissalOffset = distance
+    }
+
+    private func updateHorizontalDismissal(_ distance: CGFloat) {
+        guard !isClosingEdge else { return }
+        isDismissing = distance != 0 || dismissalOffset != 0
+        horizontalDismissalOffset = max(0, distance)
     }
 
     private func finishDismissal(_ close: Bool) {
@@ -158,9 +198,40 @@ struct ReaderView: View {
                 dismissalOffset = 0
             } completion: {
                 // Keep the moving page transparent until the return finishes.
-                if dismissalOffset == 0 { isDismissing = false }
+                if dismissalOffset == 0, horizontalDismissalOffset == 0 { isDismissing = false }
             }
         }
+    }
+
+    private func finishHorizontalDismissal(_ close: Bool) {
+        if close {
+            guard !isClosingEdge else { return }
+            isClosingEdge = true
+            if reduceMotion {
+                dismiss()
+            } else {
+                withAnimation(.easeOut(duration: 0.24)) {
+                    horizontalDismissalOffset = 2_000
+                }
+                Task { @MainActor in
+                    do { try await Task.sleep(for: .seconds(0.24)) } catch { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { dismiss() }
+                }
+            }
+        } else {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) {
+                horizontalDismissalOffset = 0
+            } completion: {
+                if dismissalOffset == 0, horizontalDismissalOffset == 0 { isDismissing = false }
+            }
+        }
+    }
+
+    private func selectContinuousPage(_ page: Int) {
+        guard pages.indices.contains(page), page != index else { return }
+        index = page
     }
 
     private func turnPage(_ delta: Int) {

@@ -77,14 +77,15 @@ struct ProfileView: View {
                     Text("Tap Left or Right").tag(PageTurnMode.tap)
                     Text("Swipe Left or Right").tag(PageTurnMode.swipe)
                     Text("Swipe Up or Down").tag(PageTurnMode.verticalSwipe)
+                    Text("Continuous Scroll").tag(PageTurnMode.continuous)
                 }
                 .tint(theme.accentColor)
                 .id("page-turn-\(theme.rawValue)")
                 Toggle("Double-Tap to Zoom", isOn: Binding(
-                    get: { pageTurnMode.usesSwipePaging && doubleTapZoom },
+                    get: { pageTurnMode.supportsDoubleTapZoom && doubleTapZoom },
                     set: { doubleTapZoom = $0 }
                 ))
-                .disabled(!pageTurnMode.usesSwipePaging)
+                .disabled(!pageTurnMode.supportsDoubleTapZoom)
                 Toggle("Related Recommendations", isOn: $showsRelatedGalleries)
             }
             Section("Miscellaneous") {

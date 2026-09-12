@@ -17,7 +17,19 @@ struct ReaderTutorial: View {
                         .accessibilityAddTraits(.isHeader)
 
                     Group {
-                        if pageTurnMode.scrollsVertically {
+                        if pageTurnMode.isContinuous {
+                            VStack(spacing: 16) {
+                                pageHint(title: "Continuous Scroll", caption: "Scroll up or down",
+                                    icon: "hand.draw", arrow: "arrow.up.and.down")
+                                Rectangle()
+                                    .fill(.white.opacity(0.25))
+                                    .frame(maxWidth: 280)
+                                    .frame(height: 1)
+                                    .accessibilityHidden(true)
+                                pageHint(title: "Close reader", caption: "Swipe right",
+                                    icon: "hand.draw", arrow: "arrow.right")
+                            }
+                        } else if pageTurnMode.scrollsVertically {
                             VStack(spacing: 16) {
                                 pageHint(title: "Previous page", caption: "Swipe down",
                                     icon: "hand.draw", arrow: "arrow.down")
@@ -28,6 +40,13 @@ struct ReaderTutorial: View {
                                     .accessibilityHidden(true)
                                 pageHint(title: "Next page", caption: "Swipe up",
                                     icon: "hand.draw", arrow: "arrow.up")
+                                Rectangle()
+                                    .fill(.white.opacity(0.25))
+                                    .frame(maxWidth: 280)
+                                    .frame(height: 1)
+                                    .accessibilityHidden(true)
+                                pageHint(title: "Close reader", caption: "Swipe right",
+                                    icon: "hand.draw", arrow: "arrow.right")
                             }
                         } else {
                             HStack(alignment: .top, spacing: 0) {

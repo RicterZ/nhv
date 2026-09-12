@@ -568,6 +568,29 @@
         }
       }
     },
+    "Continuous Scroll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuous Scroll"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連続スクロール"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连续滚动"
+          }
+        }
+      }
+    },
     "Collapse" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2385,6 +2408,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索作品"
+          }
+        }
+      }
+    },
+    "Scroll up or down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll up or down"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下にスクロール"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下滚动"
           }
         }
       }
