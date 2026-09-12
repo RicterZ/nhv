@@ -30,7 +30,7 @@ struct ReaderView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(1 - min(0.8, dismissalOffset / 400)).ignoresSafeArea()
+            Color.black.opacity(1 - min(0.8, abs(dismissalOffset) / 400)).ignoresSafeArea()
             let pageURLs = urls
             let url = pageURLs.indices.contains(index) ? pageURLs[index] : nil
             if pageTurnMode.usesSwipePaging {
@@ -41,7 +41,7 @@ struct ReaderView: View {
                     isDismissing: isDismissing,
                     selectPage: { turnPage($0 - index) },
                     dismissalChanged: updateDismissal, dismissalEnded: finishDismissal)
-                    .offset(y: dismissalOffset)
+                    .offset(y: pageTurnMode.scrollsVertically ? 0 : dismissalOffset)
                     .ignoresSafeArea()
             } else {
                 ZoomablePage(image: url.flatMap { media.reader.images[$0] }, resetID: resetID, isZoomed: $isZoomed,
@@ -125,7 +125,7 @@ struct ReaderView: View {
     }
 
     private func updateDismissal(_ distance: CGFloat) {
-        isDismissing = true
+        isDismissing = distance != 0
         dismissalOffset = distance
     }
 

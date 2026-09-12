@@ -75,6 +75,8 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
     private var selectedIndex = 0
     private var lastResetID: Int?
     private var lastSize = CGSize.zero
+    private var edgeDismissalDistance: CGFloat = 0
+    private var edgeDismissalActive = false
     var selectPage: ((Int) -> Void)?
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
@@ -181,9 +183,55 @@ final class ReaderPagingView: UIScrollView, UIScrollViewDelegate {
         }
     }
 
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { finishPaging() }
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        if edgeDismissalActive {
+            edgeDismissalDistance = 0
+            edgeDismissalActive = false
+            dismissalChanged?(0)
+            dismissalEnded?(false)
+        } else {
+            finishPaging()
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollsVertically, !images.isEmpty, !isZooming, isDragging || edgeDismissalActive else { return }
+        let maximumOffset = max(0, contentSize.height - bounds.height)
+        let distance: CGFloat
+        if selectedIndex == 0, contentOffset.y < 0 {
+            distance = -contentOffset.y
+        } else if selectedIndex == images.count - 1, contentOffset.y > maximumOffset {
+            distance = maximumOffset - contentOffset.y
+        } else {
+            distance = 0
+        }
+        if isDragging, distance != 0 { edgeDismissalActive = true }
+        guard edgeDismissalActive else { return }
+        guard distance != edgeDismissalDistance else { return }
+        edgeDismissalDistance = distance
+        dismissalChanged?(distance)
+        if distance == 0, !isDragging {
+            edgeDismissalActive = false
+            dismissalEnded?(false)
+        }
+    }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if edgeDismissalActive {
+            let distance = edgeDismissalDistance
+            let velocity = panGestureRecognizer.velocity(in: self).y
+            let movingOutward = distance.sign == velocity.sign
+            let close = abs(distance) > 120 || (abs(distance) > 30 && movingOutward && abs(velocity) > 900)
+            if close {
+                edgeDismissalDistance = 0
+                edgeDismissalActive = false
+                dismissalEnded?(true)
+            } else if distance == 0 {
+                edgeDismissalActive = false
+                dismissalEnded?(false)
+            }
+            return
+        }
         if !decelerate { finishPaging() }
     }
 

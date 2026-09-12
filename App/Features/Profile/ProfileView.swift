@@ -36,13 +36,21 @@ struct ProfileView: View {
                 Button("Sign Out", role: .destructive) { showsSignOutConfirmation = true }
                 if let error = session.error { InlineErrorView(error: error) }
             }
-            Section {
-                Picker("Appearance", selection: $theme) {
+            Section("Appearance") {
+                Picker("Theme", selection: $theme) {
                     Text("Dark").tag(AppTheme.dark)
                     Text("Light").tag(AppTheme.light)
                 }
                 .tint(theme.accentColor)
                 .id("appearance-\(theme.rawValue)")
+                Picker("Gallery Columns", selection: $galleryColumns) {
+                    Text("2 Columns").tag(2)
+                    Text("3 Columns").tag(3)
+                }
+                .tint(theme.accentColor)
+                .id("gallery-columns-\(theme.rawValue)")
+            }
+            Section("Language") {
                 Picker("Language", selection: $language.selection) {
                     ForEach(AppLanguage.allCases, id: \.self) { option in
                         Text(verbatim: option.definition.nativeName).tag(option)
@@ -63,12 +71,8 @@ struct ProfileView: View {
                     }
                 }
                 Toggle("Prefer Japanese Titles", isOn: $prefersJapaneseTitles)
-                Picker("Gallery Columns", selection: $galleryColumns) {
-                    Text("2 Columns").tag(2)
-                    Text("3 Columns").tag(3)
-                }
-                .tint(theme.accentColor)
-                .id("gallery-columns-\(theme.rawValue)")
+            }
+            Section("Reading") {
                 Picker("Page Turn Method", selection: $pageTurnMode) {
                     Text("Tap Left or Right").tag(PageTurnMode.tap)
                     Text("Swipe Left or Right").tag(PageTurnMode.swipe)
@@ -81,13 +85,13 @@ struct ProfileView: View {
                     set: { doubleTapZoom = $0 }
                 ))
                 .disabled(!pageTurnMode.usesSwipePaging)
+                Toggle("Related Recommendations", isOn: $showsRelatedGalleries)
+            }
+            Section("Miscellaneous") {
                 Toggle("Read Clipboard", isOn: $readsClipboard)
-                Toggle("Show Related Content", isOn: $showsRelatedGalleries)
                 Toggle(isOn: $nsfwEnabled) {
                     Text(verbatim: "NSFW")
                 }
-            } header: {
-                Text("Settings")
             }
             Section {
                 LabeledContent("Cache Size") {
