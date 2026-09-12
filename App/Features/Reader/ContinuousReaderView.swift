@@ -12,6 +12,7 @@ struct ContinuousReaderView: UIViewRepresentable {
     var isClosing = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     let selectPage: (Int) -> Void
+    let scrollingChanged: (Bool) -> Void
     let dismissalChanged: (CGFloat) -> Void
     let dismissalEnded: (Bool) -> Void
 
@@ -26,6 +27,7 @@ struct ContinuousReaderView: UIViewRepresentable {
         view.isClosing = isClosing
         view.doubleTapZoomEnabled = doubleTapZoomEnabled
         view.selectPage = selectPage
+        view.scrollingChanged = scrollingChanged
         view.dismissalChanged = dismissalChanged
         view.dismissalEnded = dismissalEnded
         view.zoomChanged = { zoomed in
@@ -46,12 +48,13 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
     private var selectedIndex = 0
     private var needsPositioning = true
     private var needsPageLayout = true
-    private var lastWidth: CGFloat = 0
+    private var lastViewportSize = CGSize.zero
     private var lastResetID: Int?
     private var doubleTap: UITapGestureRecognizer!
     private var dismissalPan: UIPanGestureRecognizer!
 
     var selectPage: ((Int) -> Void)?
+    var scrollingChanged: ((Bool) -> Void)?
     var dismissalChanged: ((CGFloat) -> Void)?
     var dismissalEnded: ((Bool) -> Void)?
     var zoomChanged: ((Bool) -> Void)?
@@ -133,16 +136,20 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
         super.layoutSubviews()
         guard bounds.width > 0 else { return }
         let width = bounds.width
-        let widthChanged = lastWidth != width
-        guard needsPageLayout || widthChanged || needsPositioning else { return }
+        let viewportSize = bounds.size
+        let sizeChanged = lastViewportSize != viewportSize
+        let widthChanged = lastViewportSize.width != width
+        guard needsPageLayout || sizeChanged || needsPositioning else { return }
 
-        if widthChanged, lastWidth != 0, zoomScale != 1 {
+        if widthChanged, lastViewportSize.width != 0, zoomScale != 1 {
             setZoomScale(1, animated: false)
             zoomChanged?(false)
         }
-        lastWidth = width
+        lastViewportSize = viewportSize
         needsPageLayout = false
-        var originY: CGFloat = 0
+        let firstSize = pageSizes.first ?? CGSize(width: 2, height: 3)
+        let firstHeight = width * firstSize.height / max(1, firstSize.width)
+        var originY = max(0, (bounds.height - firstHeight) / 2)
         for (index, page) in pageViews.enumerated() {
             let size = pageSizes.indices.contains(index) ? pageSizes[index] : CGSize(width: 2, height: 3)
             let height = width * size.height / max(1, size.width)
@@ -153,9 +160,11 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
         canvas.frame = CGRect(x: 0, y: 0, width: width, height: originY)
         contentSize = canvas.bounds.size
 
-        if needsPositioning || widthChanged {
+        if needsPositioning || sizeChanged {
             needsPositioning = false
-            let targetY = pageViews.indices.contains(selectedIndex) ? pageViews[selectedIndex].frame.minY : 0
+            let targetY = selectedIndex == 0
+                ? 0
+                : (pageViews.indices.contains(selectedIndex) ? pageViews[selectedIndex].frame.minY : 0)
             setContentOffset(CGPoint(x: 0, y: targetY), animated: false)
         }
     }
@@ -164,6 +173,18 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         updateSelectedPage()
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        scrollingChanged?(true)
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { scrollingChanged?(false) }
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        scrollingChanged?(false)
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
@@ -175,7 +196,9 @@ final class ContinuousReaderScrollView: UIScrollView, UIScrollViewDelegate, UIGe
         guard !needsPositioning, !pageViews.isEmpty, bounds.height > 0 else { return }
         let visibleTop = CGPoint(x: bounds.midX, y: bounds.minY + 1)
         let focusY = convert(visibleTop, to: canvas).y
-        let next = pageViews.firstIndex { $0.frame.maxY >= focusY } ?? pageViews.count - 1
+        var next = min(selectedIndex, pageViews.count - 1)
+        while next + 1 < pageViews.count, pageViews[next].frame.maxY < focusY { next += 1 }
+        while next > 0, pageViews[next - 1].frame.maxY >= focusY { next -= 1 }
         guard next != selectedIndex else { return }
         selectedIndex = next
         selectPage?(next)

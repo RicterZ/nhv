@@ -85,6 +85,10 @@ struct ReaderView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else {
+                if pageTurnMode.isContinuous {
+                    navigation.updateReaderPage(index)
+                    media.reader.trim(around: index, urls: urls)
+                }
                 media.reader.pause()
                 return
             }
@@ -95,11 +99,11 @@ struct ReaderView: View {
                 }
             }
             guard !Task.isCancelled else { return }
-            media.reader.focus(on: index, urls: urls)
+            media.reader.focus(on: index, urls: urls, retainsLoadedImages: pageTurnMode.isContinuous)
         }
         .onChange(of: index) { _, _ in
-            navigation.updateReaderPage(index)
-            media.reader.focus(on: index, urls: urls)
+            if !pageTurnMode.isContinuous { navigation.updateReaderPage(index) }
+            media.reader.focus(on: index, urls: urls, retainsLoadedImages: pageTurnMode.isContinuous)
         }
         .onAppear { navigation.isReading = true }
         .onDisappear {
@@ -121,6 +125,7 @@ struct ReaderView: View {
                 doubleTapZoomEnabled: doubleTapZoom,
                 isClosing: isClosingEdge,
                 selectPage: selectContinuousPage,
+                scrollingChanged: continuousScrollingChanged,
                 dismissalChanged: updateHorizontalDismissal,
                 dismissalEnded: finishHorizontalDismissal
             )
@@ -232,6 +237,12 @@ struct ReaderView: View {
     private func selectContinuousPage(_ page: Int) {
         guard pages.indices.contains(page), page != index else { return }
         index = page
+    }
+
+    private func continuousScrollingChanged(_ scrolling: Bool) {
+        guard !scrolling else { return }
+        navigation.updateReaderPage(index)
+        media.reader.trim(around: index, urls: urls)
     }
 
     private func turnPage(_ delta: Int) {
