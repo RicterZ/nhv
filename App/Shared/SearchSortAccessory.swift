@@ -2,6 +2,62 @@ import SwiftUI
 import UIKit
 import NHVCore
 
+struct SearchFieldAlignment: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> SearchFieldAlignmentController {
+        SearchFieldAlignmentController()
+    }
+
+    func updateUIViewController(_ controller: SearchFieldAlignmentController, context: Context) {
+        controller.attach()
+    }
+
+    static func dismantleUIViewController(_ controller: SearchFieldAlignmentController, coordinator: ()) {
+        controller.detach()
+    }
+}
+
+final class SearchFieldAlignmentController: UIViewController {
+    private weak var searchBar: UISearchBar?
+
+    override func didMove(toParent parent: UIViewController?) {
+        super.didMove(toParent: parent)
+        attach()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        attach()
+    }
+
+    func attach() {
+        var ancestor = parent
+        while let owner = ancestor {
+            if let candidate = owner.navigationItem.searchController?.searchBar {
+                if searchBar !== candidate {
+                    detach()
+                    searchBar = candidate
+                }
+                #if targetEnvironment(macCatalyst)
+                let offset = UIOffset(horizontal: 0, vertical: 3)
+                candidate.searchTextField.contentVerticalAlignment = .center
+                candidate.searchTextPositionAdjustment = offset
+                candidate.setPositionAdjustment(offset, for: .search)
+                #endif
+                return
+            }
+            ancestor = owner.parent
+        }
+    }
+
+    func detach() {
+        #if targetEnvironment(macCatalyst)
+        searchBar?.searchTextPositionAdjustment = .zero
+        searchBar?.setPositionAdjustment(.zero, for: .search)
+        #endif
+        searchBar = nil
+    }
+}
+
 /// Keep native searchable behavior while placing the sort menu inside its field.
 struct SearchSortAccessory: UIViewControllerRepresentable {
     @Binding var selection: GallerySort
@@ -136,6 +192,7 @@ final class SearchSortController: UIViewController {
                     originalClearMode = candidate.clearButtonMode
                 }
                 if candidate.rightView !== accessory { candidate.rightView = accessory }
+                candidate.contentVerticalAlignment = .center
                 candidate.clearButtonMode = .never
                 candidate.rightViewMode = .always
                 layoutAccessory()
@@ -160,11 +217,18 @@ final class SearchSortController: UIViewController {
         let hasText = !(text?.wrappedValue.isEmpty ?? true)
         let buttonWidth = min(144, max(40, ceil(sortButton.intrinsicContentSize.width)))
         let width: CGFloat = buttonWidth + (hasText ? 36 : 0)
-        let size = CGSize(width: width, height: 36)
+        let measuredHeight = field?.bounds.height ?? 36
+        let height = min(36, max(24, measuredHeight))
+        let size = CGSize(width: width, height: height)
         if accessory.frame.size != size { accessory.frame.size = size }
         clearButton.isHidden = !hasText
-        clearButton.frame = CGRect(x: 0, y: 0, width: 36, height: 36)
-        sortButton.frame = CGRect(x: hasText ? 36 : 0, y: 0, width: buttonWidth, height: 36)
+        #if targetEnvironment(macCatalyst)
+        let buttonY: CGFloat = 3
+        #else
+        let buttonY: CGFloat = 0
+        #endif
+        clearButton.frame = CGRect(x: 0, y: buttonY, width: 36, height: height)
+        sortButton.frame = CGRect(x: hasText ? 36 : 0, y: buttonY, width: buttonWidth, height: height)
     }
 
     private static let funnelImage = UIGraphicsImageRenderer(size: CGSize(width: 20, height: 20)).image { _ in

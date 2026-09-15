@@ -53,11 +53,17 @@ struct MainTabView: View {
     }
 
     private var navigationRailWidth: CGFloat {
-        #if targetEnvironment(macCatalyst)
         66
-        #else
-        74
-        #endif
+    }
+
+    private var navigationRailContentSpacing: CGFloat {
+        6
+    }
+
+    private var selectedTabBackground: Color {
+        navigation.selectedTab == .settings
+            ? Color(uiColor: .systemGroupedBackground)
+            : Color(uiColor: .systemBackground)
     }
 
     var body: some View {
@@ -65,25 +71,7 @@ struct MainTabView: View {
         GeometryReader { geometry in
             Group {
                 if usesNavigationRail(in: geometry.size) {
-                    HStack(spacing: 0) {
-                        VStack(spacing: 6) {
-                            Spacer(minLength: 0)
-                            railButton(.home, title: "Home", systemImage: "books.vertical")
-                            railButton(.search, title: "Search", systemImage: "magnifyingglass")
-                            railButton(.favorites, title: "Favorites", systemImage: "heart")
-                            railButton(.settings, title: "Settings", systemImage: "gearshape")
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 12)
-                        .frame(width: navigationRailWidth)
-                        .background(Color(uiColor: .secondarySystemBackground))
-
-                        Divider()
-
-                        selectedTab(navigation.selectedTab)
-                            .environment(\.usesNavigationRailLayout, true)
-                    }
+                    navigationRailLayout
                 } else {
                     tabs(selection: $navigation.selectedTab)
                 }
@@ -117,10 +105,6 @@ struct MainTabView: View {
         .preferredColorScheme(theme.colorScheme)
         .task { await favoritesFeed.prepare() }
         .task { await tagTranslations.prepare() }
-        .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
-            await favorites.synchronize(api: account.api)
-        }
         .onDisappear {
             favoritesFeed.cancel()
             media.thumbnails.cancel()
@@ -133,6 +117,40 @@ struct MainTabView: View {
                 ClipboardGallery.clearAfterOpening(link)
             }
         }
+    }
+
+    private var navigationRailLayout: some View {
+        ZStack(alignment: .leading) {
+            selectedTab(navigation.selectedTab)
+                .environment(\.usesNavigationRailLayout, true)
+                .contentMargins(
+                    .leading,
+                    navigationRailWidth + 6 + navigationRailContentSpacing,
+                    for: .scrollContent
+                )
+            navigationRail
+        }
+        .background(selectedTabBackground.ignoresSafeArea())
+    }
+
+    private var navigationRail: some View {
+        VStack {
+            Spacer(minLength: 0)
+            VStack(spacing: 6) {
+                railButton(.home, title: "Home", systemImage: "books.vertical")
+                railButton(.search, title: "Search", systemImage: "magnifyingglass")
+                railButton(.favorites, title: "Favorites", systemImage: "heart")
+                railButton(.settings, title: "Settings", systemImage: "gearshape")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 10)
+        .frame(width: navigationRailWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .modifier(NavigationRailGlass())
+        .frame(width: navigationRailWidth + 6, alignment: .trailing)
+        .zIndex(1)
     }
 
     @ViewBuilder
@@ -214,4 +232,21 @@ struct MainTabView: View {
         }
     }
 
+}
+
+private struct NavigationRailGlass: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(.regularMaterial, in: shape)
+                .overlay {
+                    shape.strokeBorder(.primary.opacity(0.1), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 3)
+        }
+    }
 }

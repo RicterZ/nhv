@@ -79,8 +79,9 @@ struct SearchView: View {
         .background(Color(uiColor: .systemBackground))
         .localizedNavigationTitle("Search")
         .navigationBarTitleDisplayMode(usesNavigationRailLayout ? .inline : .large)
-        .searchable(text: $input, isPresented: $isSearchPresented, placement: searchFieldPlacement, prompt: "Search galleries")
+        .searchable(text: $input, isPresented: $isSearchPresented, placement: searchFieldPlacement, prompt: "Search")
         .modifier(SearchCompletionSelection(request: completionRequest))
+        .background(SearchFieldAlignment().frame(width: 0, height: 0))
         .background(SearchSortAccessory(selection: $sort, text: $input).frame(width: 0, height: 0))
         .onChange(of: input) { _, value in
             if selectedTagSuggestion?.displayQuery != value { selectedTagSuggestion = nil }

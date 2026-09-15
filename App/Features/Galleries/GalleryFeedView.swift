@@ -114,9 +114,6 @@ private struct GalleryFeedView<Header: View>: View {
             nextPageTask?.cancel()
             if let preloadedFavorites { await preloadedFavorites.refresh() }
             else { await feed.refresh() }
-            if case .favorites = query {
-                favorites.requestSynchronization(api: api)
-            }
         }
         .task {
             if let preloadedFavorites {

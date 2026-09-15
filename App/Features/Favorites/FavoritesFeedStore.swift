@@ -8,7 +8,6 @@ final class FavoritesFeedStore {
     private let favorites: FavoriteStore
     private let media: MediaStore
     private let api: NHentaiAPI
-    private var revision = 0
     private var request: Task<Void, Never>?
     private var generation = UUID()
 
@@ -28,13 +27,7 @@ final class FavoritesFeedStore {
         let task = Task {
             await media.prepare(api: api)
             guard !Task.isCancelled, operation == generation else { return }
-            let requestedRevision = favorites.revision
-            if requestedRevision != revision {
-                await feed.refresh()
-            } else {
-                await feed.loadIfNeeded()
-            }
-            if feed.hasLoaded, feed.error == nil { revision = requestedRevision }
+            await feed.loadIfNeeded()
             media.thumbnails.enqueue(feed.items.compactMap { media.thumbnail($0.thumbnail, galleryID: $0.id) })
         }
         request = task
@@ -45,9 +38,7 @@ final class FavoritesFeedStore {
     func refresh() async {
         // A late startup preload must not replace this explicit refresh.
         cancel()
-        let requestedRevision = favorites.revision
         await feed.refresh()
-        if feed.error == nil { revision = requestedRevision }
     }
 
     func cancel() {
