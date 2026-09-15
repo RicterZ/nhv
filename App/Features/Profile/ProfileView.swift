@@ -9,6 +9,7 @@ struct ProfileView: View {
     @Environment(\.locale) private var locale
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.usesNavigationRailLayout) private var usesNavigationRailLayout
     @State private var cacheSize: Int64?
     @State private var isLoadingCacheSize = true
     @State private var historyCount: Int?
@@ -170,6 +171,7 @@ struct ProfileView: View {
         }
         .listSectionSpacing(12)
         .localizedNavigationTitle("Settings")
+        .navigationBarTitleDisplayMode(usesNavigationRailLayout ? .inline : .automatic)
         .task { await refreshCacheSize() }
         .task { await refreshHistoryCount() }
         .onChange(of: scenePhase) { _, phase in

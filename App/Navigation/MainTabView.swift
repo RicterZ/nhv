@@ -1,6 +1,17 @@
 import SwiftUI
 import NHVCore
 
+private struct NavigationRailLayoutKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var usesNavigationRailLayout: Bool {
+        get { self[NavigationRailLayoutKey.self] }
+        set { self[NavigationRailLayoutKey.self] = newValue }
+    }
+}
+
 struct MainTabView: View {
     let account: AuthenticatedSession
     var isReady = true
@@ -41,6 +52,14 @@ struct MainTabView: View {
         #endif
     }
 
+    private var navigationRailWidth: CGFloat {
+        #if targetEnvironment(macCatalyst)
+        66
+        #else
+        74
+        #endif
+    }
+
     var body: some View {
         @Bindable var navigation = navigation
         GeometryReader { geometry in
@@ -48,6 +67,7 @@ struct MainTabView: View {
                 if usesNavigationRail(in: geometry.size) {
                     HStack(spacing: 0) {
                         VStack(spacing: 6) {
+                            Spacer(minLength: 0)
                             railButton(.home, title: "Home", systemImage: "books.vertical")
                             railButton(.search, title: "Search", systemImage: "magnifyingglass")
                             railButton(.favorites, title: "Favorites", systemImage: "heart")
@@ -56,12 +76,13 @@ struct MainTabView: View {
                         }
                         .padding(.horizontal, 6)
                         .padding(.vertical, 12)
-                        .frame(width: 74)
+                        .frame(width: navigationRailWidth)
                         .background(Color(uiColor: .secondarySystemBackground))
 
                         Divider()
 
                         selectedTab(navigation.selectedTab)
+                            .environment(\.usesNavigationRailLayout, true)
                     }
                 } else {
                     tabs(selection: $navigation.selectedTab)
@@ -169,6 +190,7 @@ struct MainTabView: View {
                 in: RoundedRectangle(cornerRadius: 12)
             )
         }
+        .frame(maxWidth: .infinity)
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }

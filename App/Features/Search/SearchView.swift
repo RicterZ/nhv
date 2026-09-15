@@ -7,6 +7,7 @@ struct SearchView: View {
     @Environment(AppNavigation.self) private var navigation
     @Environment(LanguagePreference.self) private var language
     @Environment(TagTranslationStore.self) private var tagTranslations
+    @Environment(\.usesNavigationRailLayout) private var usesNavigationRailLayout
     @AppStorage(ContentDisplayPreference.translatesTagsKey) private var translatesTags = false
     @State private var input = ""
     @State private var terms: [String] = []
@@ -27,6 +28,9 @@ struct SearchView: View {
     }
 
     private var query: String { terms.joined(separator: " ") }
+    private var searchFieldPlacement: SearchFieldPlacement {
+        usesNavigationRailLayout ? .toolbar : .navigationBarDrawer(displayMode: .always)
+    }
     private var usesTranslatedTags: Bool {
         language.selection == .simplifiedChinese && translatesTags
     }
@@ -74,8 +78,8 @@ struct SearchView: View {
         .scrollBounceBehavior(.always)
         .background(Color(uiColor: .systemBackground))
         .localizedNavigationTitle("Search")
-        .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $input, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search galleries")
+        .navigationBarTitleDisplayMode(usesNavigationRailLayout ? .inline : .large)
+        .searchable(text: $input, isPresented: $isSearchPresented, placement: searchFieldPlacement, prompt: "Search galleries")
         .modifier(SearchCompletionSelection(request: completionRequest))
         .background(SearchSortAccessory(selection: $sort, text: $input).frame(width: 0, height: 0))
         .onChange(of: input) { _, value in
