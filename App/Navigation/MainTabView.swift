@@ -14,6 +14,7 @@ struct MainTabView: View {
     @State private var tagTranslations = TagTranslationStore()
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @AppStorage(ClipboardGallery.enabledKey) private var readsClipboard = true
 
@@ -32,21 +33,40 @@ struct MainTabView: View {
         isReady && scenePhase == .active && readsClipboard && !navigation.isReading
     }
 
+    private func usesNavigationRail(in size: CGSize) -> Bool {
+        #if targetEnvironment(macCatalyst)
+        true
+        #else
+        horizontalSizeClass == .regular && size.width > size.height
+        #endif
+    }
+
     var body: some View {
         @Bindable var navigation = navigation
-        TabView(selection: $navigation.selectedTab) {
-            stack(.home) { HomeView(api: account.api) }
-                .tabItem { Label(AppLocalization.string("Home", locale: language.locale), systemImage: "books.vertical") }
-                .tag(AppNavigation.Tab.home)
-            stack(.search) { SearchView(api: account.api, savedState: navigation.searchState("root")) }
-                .tabItem { Label(AppLocalization.string("Search", locale: language.locale), systemImage: "magnifyingglass") }
-                .tag(AppNavigation.Tab.search)
-            stack(.favorites) { FavoritesView(api: account.api, preloaded: favoritesFeed) }
-                .tabItem { Label(AppLocalization.string("Favorites", locale: language.locale), systemImage: "heart") }
-                .tag(AppNavigation.Tab.favorites)
-            stack(.settings) { ProfileView(user: account.user, api: account.api) }
-                .tabItem { Label(AppLocalization.string("Settings", locale: language.locale), systemImage: "gearshape") }
-                .tag(AppNavigation.Tab.settings)
+        GeometryReader { geometry in
+            Group {
+                if usesNavigationRail(in: geometry.size) {
+                    HStack(spacing: 0) {
+                        VStack(spacing: 6) {
+                            railButton(.home, title: "Home", systemImage: "books.vertical")
+                            railButton(.search, title: "Search", systemImage: "magnifyingglass")
+                            railButton(.favorites, title: "Favorites", systemImage: "heart")
+                            railButton(.settings, title: "Settings", systemImage: "gearshape")
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 12)
+                        .frame(width: 74)
+                        .background(Color(uiColor: .secondarySystemBackground))
+
+                        Divider()
+
+                        selectedTab(navigation.selectedTab)
+                    }
+                } else {
+                    tabs(selection: $navigation.selectedTab)
+                }
+            }
         }
         .overlay {
             if let item = coverPreview.item, !nsfwEnabled {
@@ -93,6 +113,66 @@ struct MainTabView: View {
             }
         }
     }
+
+    @ViewBuilder
+    private func selectedTab(_ tab: AppNavigation.Tab) -> some View {
+        switch tab {
+        case .home:
+            stack(.home) { HomeView(api: account.api) }
+        case .search:
+            stack(.search) { SearchView(api: account.api, savedState: navigation.searchState("root")) }
+        case .favorites:
+            stack(.favorites) { FavoritesView(api: account.api, preloaded: favoritesFeed) }
+        case .settings:
+            stack(.settings) { ProfileView(user: account.user, api: account.api) }
+        }
+    }
+
+    private func tabs(selection: Binding<AppNavigation.Tab>) -> some View {
+        TabView(selection: selection) {
+            stack(.home) { HomeView(api: account.api) }
+                .tabItem { Label(AppLocalization.string("Home", locale: language.locale), systemImage: "books.vertical") }
+                .tag(AppNavigation.Tab.home)
+            stack(.search) { SearchView(api: account.api, savedState: navigation.searchState("root")) }
+                .tabItem { Label(AppLocalization.string("Search", locale: language.locale), systemImage: "magnifyingglass") }
+                .tag(AppNavigation.Tab.search)
+            stack(.favorites) { FavoritesView(api: account.api, preloaded: favoritesFeed) }
+                .tabItem { Label(AppLocalization.string("Favorites", locale: language.locale), systemImage: "heart") }
+                .tag(AppNavigation.Tab.favorites)
+            stack(.settings) { ProfileView(user: account.user, api: account.api) }
+                .tabItem { Label(AppLocalization.string("Settings", locale: language.locale), systemImage: "gearshape") }
+                .tag(AppNavigation.Tab.settings)
+        }
+    }
+
+    private func railButton(
+        _ tab: AppNavigation.Tab,
+        title: String.LocalizationValue,
+        systemImage: String
+    ) -> some View {
+        let selected = navigation.selectedTab == tab
+        return Button {
+            navigation.selectedTab = tab
+        } label: {
+            VStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 19, weight: selected ? .semibold : .regular))
+                Text(verbatim: AppLocalization.string(title, locale: language.locale))
+                    .font(.caption2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(selected ? theme.accentColor : Color.secondary)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .background(
+                selected ? theme.accentColor.opacity(0.14) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
     private func stack<Content: View>(_ tab: AppNavigation.Tab, @ViewBuilder content: () -> Content) -> some View {
         NavigationStack(path: Binding(get: { navigation.path(for: tab) }, set: { navigation.setPath($0, for: tab) })) {
             content().navigationDestination(for: AppNavigation.Route.self) { route in

@@ -81,8 +81,10 @@ struct ReaderView: View {
         .foregroundStyle(.white)
         .buttonStyle(.plain)
         .preferredColorScheme(.dark)
+        #if !targetEnvironment(macCatalyst)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        #endif
         .accessibilityAction(named: Text("Next page")) { turnPage(1) }
         .accessibilityAction(named: Text("Previous page")) { turnPage(-1) }
         .allowsHitTesting(hasSeenTutorial)

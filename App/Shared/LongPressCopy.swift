@@ -17,7 +17,9 @@ struct LongPressCopy: ViewModifier {
     private func copy() {
         UIPasteboard.general.string = value
         ClipboardGallery.ignoreCurrentContent()
+        #if !targetEnvironment(macCatalyst)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #endif
         onCopy()
     }
 }

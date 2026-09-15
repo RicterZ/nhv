@@ -3,7 +3,6 @@ import UIKit
 
 struct GalleryCover: View {
     let url: URL?
-    var fillsStandardCoverWidth = false
     var retainsLoadedImage = true
     var letterboxColor: Color = .white
     @Environment(MediaStore.self) private var media
@@ -29,19 +28,12 @@ struct GalleryCover: View {
         GeometryReader { geometry in
             Group {
                 if let image = displayedImage {
-                    let ratio = image.size.width / max(1, image.size.height)
-                    Group {
-                        if fillsStandardCoverWidth && (480.0 / 720.0...520.0 / 680.0).contains(ratio) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .frame(width: geometry.size.width, height: geometry.size.width / ratio)
-                        } else {
-                            Image(uiImage: image).resizable().scaledToFit()
-                        }
-                    }
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
-                    .background(letterboxColor)
-                    .clipped()
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
+                        .background(letterboxColor)
+                        .clipped()
                 } else if let url, media.thumbnails.failures.contains(url) {
                     VStack(spacing: 8) {
                         Image(systemName: "photo.badge.exclamationmark")

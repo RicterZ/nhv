@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Security
 
 @MainActor
@@ -15,6 +16,10 @@ public enum CredentialError: Error, Sendable, Equatable {
 
 @MainActor
 public struct KeychainCredentialStore: CredentialStore {
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "NHVCore",
+        category: "Credentials"
+    )
     private let service: String
     private let account = "api-key"
 
@@ -33,7 +38,10 @@ public struct KeychainCredentialStore: CredentialStore {
         var result: CFTypeRef?
         let status = SecItemCopyMatching(attributes as CFDictionary, &result)
         if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess else { throw CredentialError.status(status) }
+        guard status == errSecSuccess else {
+            Self.logFailure("load", status: status)
+            throw CredentialError.status(status)
+        }
         guard let data = result as? Data, let value = String(data: data, encoding: .utf8),
               let key = try? APIKey(value) else { throw CredentialError.invalidData }
         return key
@@ -48,11 +56,22 @@ public struct KeychainCredentialStore: CredentialStore {
         if status == errSecItemNotFound {
             status = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
         }
-        guard status == errSecSuccess else { throw CredentialError.status(status) }
+        guard status == errSecSuccess else {
+            Self.logFailure("save", status: status)
+            throw CredentialError.status(status)
+        }
     }
 
     public func delete() throws {
         let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw CredentialError.status(status) }
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            Self.logFailure("delete", status: status)
+            throw CredentialError.status(status)
+        }
+    }
+
+    private static func logFailure(_ operation: StaticString, status: OSStatus) {
+        let message = SecCopyErrorMessageString(status, nil) as String? ?? "Unknown error"
+        logger.error("Keychain \(operation) failed: \(status, privacy: .public) \(message, privacy: .public)")
     }
 }

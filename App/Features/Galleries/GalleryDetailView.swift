@@ -44,7 +44,12 @@ struct GalleryDetailView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let twoColumns = UIDevice.current.userInterfaceIdiom == .pad
+            #if targetEnvironment(macCatalyst)
+            let usesWideLayout = true
+            #else
+            let usesWideLayout = UIDevice.current.userInterfaceIdiom == .pad
+            #endif
+            let twoColumns = usesWideLayout
                 && geometry.size.width > geometry.size.height
                 && geometry.size.width >= 760
             ScrollView {

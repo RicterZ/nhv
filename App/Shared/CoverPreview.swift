@@ -22,7 +22,9 @@ final class CoverPreview {
 
     func show(_ item: Item) {
         guard self.item?.id != item.id else { return }
+        #if !targetEnvironment(macCatalyst)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.65)
+        #endif
         self.item = item
     }
 

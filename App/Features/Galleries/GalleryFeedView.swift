@@ -34,7 +34,6 @@ private struct GalleryFeedView<Header: View>: View {
     @State private var nextPageTask: Task<Void, Never>?
     @State private var favoriteRevision = 0
     @State private var isRefreshing = false
-    @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var galleryColumns = 2
 
     init(api: NHentaiAPI, query: GalleryQuery, media: MediaStore, favorites: FavoriteStore,
          preloadedFavorites: FavoritesFeedStore? = nil, @ViewBuilder header: @escaping () -> Header) {
@@ -85,8 +84,7 @@ private struct GalleryFeedView<Header: View>: View {
 
                 if !displayedItems.isEmpty {
                     GalleryGrid(galleries: displayedItems, api: api, showsFavoriteCount: showsFavoriteCount,
-                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true,
-                        columnCount: galleryColumns == 3 ? 3 : 2, usesCompactCards: galleryColumns == 3)
+                        prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: true)
                 }
 
                 if let error = feed.error {
@@ -155,13 +153,34 @@ struct GalleryGrid: View {
     var respectsNSFWSetting = false
     var columnCount: Int? = nil
     var usesCompactCards = false
+    var usesAdaptiveWideLayout = true
     @Environment(AppNavigation.self) private var navigation
     @Environment(MediaStore.self) private var media
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @AppStorage(ContentDisplayPreference.galleryColumnsKey) private var preferredColumnCount = 2
+
+    private var isWideLayout: Bool {
+        guard usesAdaptiveWideLayout else { return false }
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
+        return horizontalSizeClass == .regular
+        #endif
+    }
+
     private var columns: [GridItem] {
+        if isWideLayout {
+            return [GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 14, alignment: .top)]
+        }
         if let columnCount {
             return Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: columnCount)
         }
-        return [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
+        return Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top),
+                     count: preferredColumnCount == 3 ? 3 : 2)
+    }
+
+    private var usesCompactCardLayout: Bool {
+        usesCompactCards || isWideLayout || columnCount == 3 || (columnCount == nil && preferredColumnCount == 3)
     }
 
     var body: some View {
@@ -170,7 +189,7 @@ struct GalleryGrid: View {
                 GalleryCard(gallery: gallery, url: media.thumbnail(gallery.thumbnail, galleryID: gallery.id), api: api,
                     showsFavoriteCount: showsFavoriteCount, recordsBrowsingHistory: recordsBrowsingHistory,
                     prefersResultFavoriteCount: prefersResultFavoriteCount, respectsNSFWSetting: respectsNSFWSetting,
-                    usesCompactLayout: usesCompactCards,
+                    usesCompactLayout: usesCompactCardLayout,
                     openDetail: { navigation.openGallery(gallery, recordsVisit: recordsBrowsingHistory) })
             }
         }
@@ -260,23 +279,10 @@ private struct GalleryCard: View {
     private var cover: some View {
         GalleryCover(
             url: url,
-            fillsStandardCoverWidth: true,
             letterboxColor: colorScheme == .light ? .black : .white
         )
             .frame(maxWidth: .infinity)
-            .modifier(GalleryCardCoverSize(compact: usesCompactLayout))
+            .aspectRatio(2 / 3, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-private struct GalleryCardCoverSize: ViewModifier {
-    let compact: Bool
-
-    func body(content: Content) -> some View {
-        if compact {
-            content.aspectRatio(2 / 3, contentMode: .fit)
-        } else {
-            content.frame(height: 240)
-        }
     }
 }

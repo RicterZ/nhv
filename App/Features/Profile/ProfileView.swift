@@ -8,6 +8,7 @@ struct ProfileView: View {
     @Environment(LanguagePreference.self) private var language
     @Environment(\.locale) private var locale
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var cacheSize: Int64?
     @State private var isLoadingCacheSize = true
     @State private var historyCount: Int?
@@ -43,12 +44,14 @@ struct ProfileView: View {
                 }
                 .tint(theme.accentColor)
                 .id("appearance-\(theme.rawValue)")
-                Picker("Gallery Columns", selection: $galleryColumns) {
-                    Text("2 Columns").tag(2)
-                    Text("3 Columns").tag(3)
+                if horizontalSizeClass == .compact {
+                    Picker("Gallery Columns", selection: $galleryColumns) {
+                        Text("2 Columns").tag(2)
+                        Text("3 Columns").tag(3)
+                    }
+                    .tint(theme.accentColor)
+                    .id("gallery-columns-\(theme.rawValue)")
                 }
-                .tint(theme.accentColor)
-                .id("gallery-columns-\(theme.rawValue)")
             }
             Section("Language") {
                 Picker("Language", selection: $language.selection) {

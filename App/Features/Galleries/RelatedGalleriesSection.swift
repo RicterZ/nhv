@@ -33,7 +33,8 @@ struct RelatedGalleriesSection: View {
 
             if !galleries.isEmpty {
                 GalleryGrid(galleries: galleries, api: api, showsFavoriteCount: true,
-                    respectsNSFWSetting: true, columnCount: 3, usesCompactCards: true)
+                    respectsNSFWSetting: true, columnCount: 3, usesCompactCards: true,
+                    usesAdaptiveWideLayout: false)
             } else if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity)
