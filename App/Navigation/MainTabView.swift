@@ -21,6 +21,7 @@ struct MainTabView: View {
     @State private var favoritesFeed: FavoritesFeedStore
     @State private var languages = GalleryLanguageStore()
     @State private var navigation: AppNavigation
+    @State private var selectedTab: AppNavigation.Tab
     @State private var coverPreview = CoverPreview()
     @State private var tagTranslations = TagTranslationStore()
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
@@ -32,7 +33,9 @@ struct MainTabView: View {
     init(account: AuthenticatedSession, isReady: Bool = true) {
         self.account = account
         self.isReady = isReady
-        _navigation = State(initialValue: AppNavigation(accountID: account.user.id))
+        let navigation = AppNavigation(accountID: account.user.id)
+        _navigation = State(initialValue: navigation)
+        _selectedTab = State(initialValue: navigation.selectedTab)
         let media = MediaStore()
         let favorites = FavoriteStore(accountID: account.user.id)
         _media = State(initialValue: media)
@@ -61,19 +64,18 @@ struct MainTabView: View {
     }
 
     private var selectedTabBackground: Color {
-        navigation.selectedTab == .settings
+        selectedTab == .settings
             ? Color(uiColor: .systemGroupedBackground)
             : Color(uiColor: .systemBackground)
     }
 
     var body: some View {
-        @Bindable var navigation = navigation
         GeometryReader { geometry in
             Group {
                 if usesNavigationRail(in: geometry.size) {
                     navigationRailLayout
                 } else {
-                    tabs(selection: $navigation.selectedTab)
+                    tabs(selection: $selectedTab)
                 }
             }
         }
@@ -86,7 +88,10 @@ struct MainTabView: View {
         }
         .animation(.easeOut(duration: 0.16), value: coverPreview.item?.id)
         .onChange(of: nsfwEnabled) { _, _ in coverPreview.item = nil }
-        .onChange(of: navigation.selectedTab) { _, _ in coverPreview.item = nil }
+        .onChange(of: selectedTab) { _, newValue in
+            navigation.selectedTab = newValue
+            coverPreview.item = nil
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { coverPreview.item = nil }
         }
@@ -121,7 +126,7 @@ struct MainTabView: View {
 
     private var navigationRailLayout: some View {
         ZStack(alignment: .leading) {
-            selectedTab(navigation.selectedTab)
+            selectedTabContent(selectedTab)
                 .environment(\.usesNavigationRailLayout, true)
                 .contentMargins(
                     .leading,
@@ -154,7 +159,7 @@ struct MainTabView: View {
     }
 
     @ViewBuilder
-    private func selectedTab(_ tab: AppNavigation.Tab) -> some View {
+    private func selectedTabContent(_ tab: AppNavigation.Tab) -> some View {
         switch tab {
         case .home:
             stack(.home) { HomeView(api: account.api) }
@@ -189,9 +194,9 @@ struct MainTabView: View {
         title: String.LocalizationValue,
         systemImage: String
     ) -> some View {
-        let selected = navigation.selectedTab == tab
+        let selected = selectedTab == tab
         return Button {
-            navigation.selectedTab = tab
+            selectedTab = tab
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: systemImage)
@@ -203,12 +208,14 @@ struct MainTabView: View {
             }
             .foregroundStyle(selected ? theme.accentColor : Color.secondary)
             .frame(maxWidth: .infinity, minHeight: 58)
+            .contentShape(RoundedRectangle(cornerRadius: 12))
             .background(
-                selected ? theme.accentColor.opacity(0.14) : Color.clear,
+                selected ? theme.accentColor.opacity(0.14) : Color.primary.opacity(0.001),
                 in: RoundedRectangle(cornerRadius: 12)
             )
         }
         .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
