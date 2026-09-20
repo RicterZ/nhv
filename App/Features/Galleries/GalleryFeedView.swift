@@ -207,6 +207,7 @@ private struct GalleryCard: View {
     @AppStorage(ContentDisplayPreference.nsfwKey) private var nsfwEnabled = true
     @AppStorage(ContentDisplayPreference.prefersJapaneseTitlesKey) private var prefersJapaneseTitles = false
     @Environment(CoverPreview.self) private var preview
+    @Environment(\.usesNavigationRailLayout) private var usesNavigationRailLayout
     @Environment(\.colorScheme) private var colorScheme
 
     private var hidesCover: Bool { respectsNSFWSetting && !nsfwEnabled }
@@ -277,7 +278,8 @@ private struct GalleryCard: View {
     private var cover: some View {
         GalleryCover(
             url: url,
-            letterboxColor: colorScheme == .light ? .black : .white
+            letterboxColor: colorScheme == .light ? .black : .white,
+            stretchesSimilarAspectRatios: usesNavigationRailLayout
         )
             .frame(maxWidth: .infinity)
             .aspectRatio(2 / 3, contentMode: .fit)

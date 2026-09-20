@@ -5,6 +5,7 @@ struct GalleryCover: View {
     let url: URL?
     var retainsLoadedImage = true
     var letterboxColor: Color = .white
+    var stretchesSimilarAspectRatios = false
     @Environment(MediaStore.self) private var media
     @State private var retainedImage: UIImage?
     @State private var retainedURL: URL?
@@ -30,7 +31,7 @@ struct GalleryCover: View {
                 if let image = displayedImage {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
+                        .aspectRatio(displayAspectRatio(for: image, in: geometry.size), contentMode: .fit)
                         .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
                         .background(letterboxColor)
                         .clipped()
@@ -78,5 +79,17 @@ struct GalleryCover: View {
         retainedGeneration = media.thumbnails.cacheGeneration
         retainedURL = url
         retainedImage = image
+    }
+
+    private func displayAspectRatio(for image: UIImage, in size: CGSize) -> CGFloat? {
+        guard stretchesSimilarAspectRatios,
+              image.size.width > 0, image.size.height > 0,
+              size.width > 0, size.height > 0 else { return nil }
+        let imageRatio = image.size.width / image.size.height
+        let containerRatio = size.width / size.height
+        // Bound distortion in either direction; unusual formats keep their
+        // original aspect ratio and remain fully visible without cropping.
+        let stretch = max(imageRatio / containerRatio, containerRatio / imageRatio)
+        return stretch <= 1.15 ? containerRatio : nil
     }
 }
