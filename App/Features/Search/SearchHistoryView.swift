@@ -17,7 +17,7 @@ struct SearchHistoryView: View {
     var body: some View {
         if !history.queries.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .center, spacing: 12) {
                     Text("Search History")
                         .font(.headline)
                         .lineLimit(1)
