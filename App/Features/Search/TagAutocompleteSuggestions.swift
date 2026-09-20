@@ -1,13 +1,33 @@
 import SwiftUI
+import UIKit
 
 struct TagAutocompleteSuggestions: View {
     let suggestions: [TagTranslationStore.Suggestion]
     let showsTranslations: Bool
+    @Environment(\.usesNavigationRailLayout) private var usesNavigationRailLayout
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let select: (TagTranslationStore.Suggestion) -> Void
 
     private var rowHeight: CGFloat { showsTranslations ? 60 : 50 }
     private var containerHeight: CGFloat {
         min(CGFloat(suggestions.count), 4.5) * rowHeight
+    }
+
+    private var compactWidth: CGFloat {
+        // Measure both lines so short suggestions wrap naturally, while long
+        // queries stay within a readable panel and truncate as before.
+        _ = dynamicTypeSize
+        let bodyFont = UIFont.preferredFont(forTextStyle: .body)
+        let primaryFont = UIFont.systemFont(ofSize: bodyFont.pointSize, weight: .medium)
+        let secondaryFont = UIFont.preferredFont(forTextStyle: .subheadline)
+        let textWidth = suggestions.map { suggestion in
+            let primary = showsTranslations ? suggestion.translatedName : suggestion.searchQuery
+            let primaryWidth = (primary as NSString).size(withAttributes: [.font: primaryFont]).width
+            let secondaryWidth = showsTranslations
+                ? (suggestion.searchQuery as NSString).size(withAttributes: [.font: secondaryFont]).width : 0
+            return max(primaryWidth, secondaryWidth)
+        }.max() ?? 0
+        return min(440, max(180, ceil(textWidth) + 76))
     }
 
     var body: some View {
@@ -53,10 +73,12 @@ struct TagAutocompleteSuggestions: View {
         }
         .scrollIndicators(.hidden)
         .frame(height: containerHeight)
+        .frame(maxWidth: usesNavigationRailLayout ? compactWidth : .infinity)
         .modifier(TagAutocompleteGlass())
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .padding(.bottom, 1)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 

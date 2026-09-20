@@ -3,6 +3,7 @@ import SwiftUI
 /// Uses the same refresh action for touch gestures and the Mac toolbar.
 struct GalleryRefresh: ViewModifier {
     let action: () async -> Void
+    @AppStorage(AppTheme.storageKey) private var theme = AppTheme.dark
     @State private var isRefreshing = false
     @State private var refreshRequest: UUID?
 
@@ -11,17 +12,10 @@ struct GalleryRefresh: ViewModifier {
             .refreshable { await refresh() }
             #if targetEnvironment(macCatalyst)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        refreshRequest = UUID()
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .labelStyle(.iconOnly)
-                    .keyboardShortcut("r", modifiers: .command)
-                    .help(Text("Refresh"))
-                    .disabled(isRefreshing || refreshRequest != nil)
-                    .accessibilityIdentifier("gallery.refresh")
+                if #available(iOS 26.0, *) {
+                    refreshToolbarItem.sharedBackgroundVisibility(.hidden)
+                } else {
+                    refreshToolbarItem
                 }
             }
             .task(id: refreshRequest) {
@@ -31,6 +25,26 @@ struct GalleryRefresh: ViewModifier {
             }
             #endif
     }
+
+    #if targetEnvironment(macCatalyst)
+    private var refreshToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                refreshRequest = UUID()
+            } label: {
+                Label("Refresh", systemImage: "arrow.clockwise")
+                    .foregroundStyle(theme.accentColor)
+            }
+            .buttonStyle(.plain)
+            .tint(theme.accentColor)
+            .labelStyle(.iconOnly)
+            .keyboardShortcut("r", modifiers: .command)
+            .help(Text("Refresh"))
+            .disabled(isRefreshing || refreshRequest != nil)
+            .accessibilityIdentifier("gallery.refresh")
+        }
+    }
+    #endif
 
     @MainActor
     private func refresh() async {
