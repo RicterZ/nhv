@@ -12,6 +12,15 @@ struct GalleryRefresh: ViewModifier {
         content
             .refreshable { await refresh() }
             #if targetEnvironment(macCatalyst)
+            .background {
+                Button("Refresh") { refreshRequest = UUID() }
+                    .keyboardShortcut("r", modifiers: .command)
+                    .disabled(isRefreshing || refreshRequest != nil)
+                    .frame(width: 0, height: 0)
+                    .clipped()
+                    .opacity(0)
+                    .accessibilityHidden(true)
+            }
             .toolbar {
                 if #available(iOS 26.0, *) {
                     refreshToolbarItem.sharedBackgroundVisibility(.hidden)
@@ -38,15 +47,7 @@ struct GalleryRefresh: ViewModifier {
             )
             .frame(width: 28, height: 28)
             .help(Text("Refresh"))
-            .background {
-                Button("Refresh") { refreshRequest = UUID() }
-                    .keyboardShortcut("r", modifiers: .command)
-                    .disabled(isRefreshing || refreshRequest != nil)
-                    .frame(width: 0, height: 0)
-                    .clipped()
-                    .opacity(0)
-                    .accessibilityHidden(true)
-            }
+
         }
     }
     #endif
