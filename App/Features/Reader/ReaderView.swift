@@ -87,6 +87,11 @@ struct ReaderView: View {
         #endif
         .accessibilityAction(named: Text("Next page")) { turnPage(1) }
         .accessibilityAction(named: Text("Previous page")) { turnPage(-1) }
+        #if targetEnvironment(macCatalyst)
+        .background {
+            keyboardPageControls
+        }
+        #endif
         .allowsHitTesting(hasSeenTutorial)
         .accessibilityHidden(!hasSeenTutorial)
         .overlay {
@@ -122,6 +127,31 @@ struct ReaderView: View {
             navigation.isReading = false
         }
     }
+
+    #if targetEnvironment(macCatalyst)
+    private var keyboardPageControls: some View {
+        // Shortcuts remain available without requiring the image to hold focus.
+        // Keep their lifetime scoped to the presented reader.
+        Group {
+            Button("Previous page") { turnPage(-1) }
+                .keyboardShortcut(.leftArrow, modifiers: [])
+            Button("Previous page") { turnPage(-1) }
+                .keyboardShortcut(.upArrow, modifiers: [])
+            Button("Next page") { turnPage(1) }
+                .keyboardShortcut(.rightArrow, modifiers: [])
+            Button("Next page") { turnPage(1) }
+                .keyboardShortcut(.downArrow, modifiers: [])
+            Button("Next page") { turnPage(1) }
+                .keyboardShortcut(.space, modifiers: [])
+        }
+        .disabled(!hasSeenTutorial || isClosingEdge || isDismissing || scenePhase != .active)
+        .frame(width: 0, height: 0)
+        .clipped()
+        .opacity(0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+    #endif
 
     @ViewBuilder
     private func readerPages(_ pageURLs: [URL?]) -> some View {
