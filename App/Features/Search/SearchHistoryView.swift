@@ -9,11 +9,10 @@ struct SearchHistoryView: View {
     var body: some View {
         if !history.queries.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Search History")
                         .font(.headline)
                         .lineLimit(1)
-                    Spacer()
                     HStack(spacing: 4) {
                         Button {
                             isExpanded = false
