@@ -53,6 +53,12 @@ final class ThumbnailStore {
         enqueue([url])
     }
 
+    func retryFailedImages() {
+        // Mounted covers observe failures and enqueue themselves again. Offscreen
+        // images can retry when they appear, without downloading the entire history.
+        failures.removeAll()
+    }
+
     func cancel() {
         resumeTask?.cancel()
         resumeTask = nil

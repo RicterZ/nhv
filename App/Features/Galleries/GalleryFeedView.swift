@@ -112,6 +112,7 @@ private struct GalleryFeedView<Header: View>: View {
             isRefreshing = true
             defer { isRefreshing = false }
             nextPageTask?.cancel()
+            media.thumbnails.retryFailedImages()
             if let preloadedFavorites { await preloadedFavorites.refresh() }
             else { await feed.refresh() }
         }

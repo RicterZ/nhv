@@ -124,6 +124,7 @@ struct GalleryDetailView: View {
             }
         }
         .refreshable {
+            media.thumbnails.retryFailedImages()
             await load(refresh: true)
             if showsRelatedGalleries { relatedRefreshID += 1 }
         }
