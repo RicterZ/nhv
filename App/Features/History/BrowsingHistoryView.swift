@@ -54,10 +54,10 @@ struct BrowsingHistoryView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await reload() } }
         }
-        .refreshable {
+        .modifier(GalleryRefresh {
             media.thumbnails.retryFailedImages()
             await reload()
-        }
+        })
     }
 
     private func reload() async {

@@ -124,11 +124,11 @@ struct GalleryDetailView: View {
                 shareToolbarItem
             }
         }
-        .refreshable {
+        .modifier(GalleryRefresh {
             media.thumbnails.retryFailedImages()
             await load(refresh: true)
             if showsRelatedGalleries { relatedRefreshID += 1 }
-        }
+        })
         .overlay(alignment: .top) {
             if copyNotification != nil {
                 Label("Copied", systemImage: "checkmark")

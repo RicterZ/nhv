@@ -38,7 +38,7 @@ final class SearchFieldAlignmentController: UIViewController {
                     searchBar = candidate
                 }
                 #if targetEnvironment(macCatalyst)
-                let offset = UIOffset(horizontal: 0, vertical: 3)
+                let offset = UIOffset.zero
                 candidate.searchTextField.contentVerticalAlignment = .center
                 candidate.searchTextPositionAdjustment = offset
                 candidate.setPositionAdjustment(offset, for: .search)
@@ -222,11 +222,7 @@ final class SearchSortController: UIViewController {
         let size = CGSize(width: width, height: height)
         if accessory.frame.size != size { accessory.frame.size = size }
         clearButton.isHidden = !hasText
-        #if targetEnvironment(macCatalyst)
-        let buttonY: CGFloat = 3
-        #else
         let buttonY: CGFloat = 0
-        #endif
         clearButton.frame = CGRect(x: 0, y: buttonY, width: 36, height: height)
         sortButton.frame = CGRect(x: hasText ? 36 : 0, y: buttonY, width: buttonWidth, height: height)
     }

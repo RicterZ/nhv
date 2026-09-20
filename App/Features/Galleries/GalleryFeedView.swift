@@ -107,7 +107,7 @@ private struct GalleryFeedView<Header: View>: View {
         }
         .background(Color(uiColor: .systemBackground))
         .scrollBounceBehavior(.always)
-        .refreshable {
+        .modifier(GalleryRefresh {
             guard !isRefreshing else { return }
             isRefreshing = true
             defer { isRefreshing = false }
@@ -115,7 +115,7 @@ private struct GalleryFeedView<Header: View>: View {
             media.thumbnails.retryFailedImages()
             if let preloadedFavorites { await preloadedFavorites.refresh() }
             else { await feed.refresh() }
-        }
+        })
         .task {
             if let preloadedFavorites {
                 await preloadedFavorites.prepare()
