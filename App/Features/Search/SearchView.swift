@@ -55,13 +55,15 @@ struct SearchView: View {
                     }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    if !tagSuggestions.isEmpty {
-                        TagAutocompleteSuggestions(suggestions: tagSuggestions, showsTranslations: usesTranslatedTags) {
-                            input = $0.displayQuery
-                            selectedTagSuggestion = $0
-                            tagSuggestions = []
+                    if !usesNavigationRailLayout { autocompleteSuggestions }
+                }
+                .overlay(alignment: .topTrailing) {
+                    if usesNavigationRailLayout, !tagSuggestions.isEmpty {
+                        GeometryReader { geometry in
+                            autocompleteSuggestions
+                                .frame(width: min(464, geometry.size.width), alignment: .trailing)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         }
-                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }
             } else if terms.isEmpty {
@@ -126,6 +128,18 @@ struct SearchView: View {
             selectedTagSuggestion = nil
             completionRequest = nil
             isSearchPresented = false
+        }
+    }
+
+    @ViewBuilder
+    private var autocompleteSuggestions: some View {
+        if !tagSuggestions.isEmpty {
+            TagAutocompleteSuggestions(suggestions: tagSuggestions, showsTranslations: usesTranslatedTags) {
+                input = $0.displayQuery
+                selectedTagSuggestion = $0
+                tagSuggestions = []
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 
