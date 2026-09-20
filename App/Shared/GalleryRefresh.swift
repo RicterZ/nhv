@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Uses the same refresh action for touch gestures and the Mac toolbar.
 struct GalleryRefresh: ViewModifier {
@@ -32,17 +33,26 @@ struct GalleryRefresh: ViewModifier {
             Button {
                 refreshRequest = UUID()
             } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
-                    .foregroundStyle(theme.accentColor)
+                Image(uiImage: refreshIcon)
+                    .renderingMode(.original)
             }
             .buttonStyle(.plain)
             .tint(theme.accentColor)
             .labelStyle(.iconOnly)
             .keyboardShortcut("r", modifiers: .command)
             .help(Text("Refresh"))
+            .accessibilityLabel(Text("Refresh"))
             .disabled(isRefreshing || refreshRequest != nil)
             .accessibilityIdentifier("gallery.refresh")
         }
+    }
+
+    private var refreshIcon: UIImage {
+        let configuration = UIImage.SymbolConfiguration(pointSize: 17, weight: .regular)
+        // Native Catalyst toolbars can replace template symbol tint. Preserve
+        // the theme color in the image itself, including after theme changes.
+        return (UIImage(systemName: "arrow.clockwise", withConfiguration: configuration) ?? UIImage())
+            .withTintColor(UIColor(theme.accentColor), renderingMode: .alwaysOriginal)
     }
     #endif
 
