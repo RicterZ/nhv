@@ -5,6 +5,7 @@ struct RelatedGalleriesSection: View {
     let api: NHentaiAPI
     let galleryID: Int
     let refreshID: Int
+    let columnCount: Int
     @Environment(MediaStore.self) private var media
     @State private var galleries: [GallerySummary] = []
     @State private var isLoading = true
@@ -33,7 +34,7 @@ struct RelatedGalleriesSection: View {
 
             if !galleries.isEmpty {
                 GalleryGrid(galleries: galleries, api: api, showsFavoriteCount: true,
-                    respectsNSFWSetting: true, columnCount: 3, usesCompactCards: true,
+                    respectsNSFWSetting: true, columnCount: columnCount, usesCompactCards: true,
                     usesAdaptiveWideLayout: false)
             } else if isLoading {
                 ProgressView()

@@ -91,7 +91,8 @@ struct GalleryDetailView: View {
                         }
 
                         if showsRelatedGalleries {
-                            RelatedGalleriesSection(api: api, galleryID: id, refreshID: relatedRefreshID)
+                            RelatedGalleriesSection(api: api, galleryID: id, refreshID: relatedRefreshID,
+                                columnCount: usesWideLayout ? 5 : 3)
                         }
                     }
                     .padding(16)
