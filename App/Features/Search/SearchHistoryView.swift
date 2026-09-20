@@ -6,6 +6,14 @@ struct SearchHistoryView: View {
     let select: (String) -> Void
     @State private var isExpanded = false
 
+    private var controlSize: CGFloat {
+        #if targetEnvironment(macCatalyst)
+        28
+        #else
+        44
+        #endif
+    }
+
     var body: some View {
         if !history.queries.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
@@ -19,7 +27,7 @@ struct SearchHistoryView: View {
                             history.clear()
                         } label: {
                             Image(systemName: "trash")
-                                .frame(width: 44, height: 44)
+                                .frame(width: controlSize, height: controlSize)
                                 .contentShape(Rectangle())
                         }
                         .accessibilityLabel(Text("Clear History"))
@@ -28,13 +36,15 @@ struct SearchHistoryView: View {
                             isExpanded.toggle()
                         } label: {
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .frame(width: 44, height: 44)
+                                .frame(width: controlSize, height: controlSize)
                                 .contentShape(Rectangle())
                         }
                         .accessibilityLabel(isExpanded ? Text("Collapse") : Text("Expand"))
                         .accessibilityIdentifier("searchHistory.expand")
                     }
                     .font(.subheadline)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
                 }
 
                 if isExpanded {
