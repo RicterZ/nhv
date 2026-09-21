@@ -109,7 +109,9 @@ struct MainTabView: View {
         .tint(theme.accentColor)
         .preferredColorScheme(theme.colorScheme)
         .task { await favoritesFeed.prepare() }
-        .task { await tagTranslations.prepare() }
+        .task(id: scenePhase) {
+            if scenePhase == .active { await tagTranslations.prepare() }
+        }
         .onDisappear {
             favoritesFeed.cancel()
             media.thumbnails.cancel()

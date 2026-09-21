@@ -15,7 +15,8 @@ final class TagTranslationStore {
         var id: String { namespace + "\u{0}" + sourceName }
     }
 
-    private struct Database: Decodable, Sendable {
+    private struct Database: Codable, Sendable {
+        let source: String
         let translations: [String: [String: String]]
     }
 
@@ -43,11 +44,14 @@ final class TagTranslationStore {
     }
 
     private(set) var isReady = false
-    @ObservationIgnored private var index = Index(
+    private var index = Index(
         namespaces: [:], genericTags: [:], candidatesByNamespace: [:], allCandidates: [])
     @ObservationIgnored private var loadTask: Task<Index, any Error>?
 
+    @ObservationIgnored private var updateTask: Task<Void, Never>?
+
     func prepare() async {
+        defer { checkForUpdates() }
         guard !isReady else { return }
         if loadTask == nil {
             loadTask = Task.detached(priority: .utility) { try Self.loadIndex() }
@@ -137,7 +141,13 @@ final class TagTranslationStore {
         let url = Bundle.main.url(forResource: "tag-translations", withExtension: "json", subdirectory: "TagTranslations")
             ?? Bundle.main.url(forResource: "tag-translations", withExtension: "json")
         guard let url else { throw CocoaError(.fileNoSuchFile) }
-        let database = try JSONDecoder().decode(Database.self, from: Data(contentsOf: url))
+        let bundled = try JSONDecoder().decode(Database.self, from: Data(contentsOf: url))
+        let cached = try? JSONDecoder().decode(Database.self, from: Data(contentsOf: cacheURL))
+        let database = cached.flatMap { isValid($0) && $0.source.compare(bundled.source, options: .numeric) != .orderedAscending ? $0 : nil } ?? bundled
+        return buildIndex(database)
+    }
+
+    nonisolated private static func buildIndex(_ database: Database) -> Index {
 
         // nhentai exposes one combined `tag` namespace. Prefer the common
         // female namespace when the upstream database has gendered duplicates.
@@ -170,6 +180,93 @@ final class TagTranslationStore {
         }
         return Index(namespaces: database.translations, genericTags: genericTags,
             candidatesByNamespace: candidatesByNamespace, allCandidates: allCandidates)
+    }
+
+    private func checkForUpdates() {
+        guard updateTask == nil else { return }
+        updateTask = Task { [weak self] in
+            let updated = await Task.detached(priority: .utility) {
+                try? await Self.fetchUpdate()
+            }.value
+            if let updated { self?.index = updated; self?.isReady = true }
+            self?.updateTask = nil
+        }
+    }
+
+    nonisolated private static var cacheURL: URL {
+        URL.applicationSupportDirectory.appendingPathComponent("TagTranslations/updated.json")
+    }
+
+    nonisolated private static func isValid(_ database: Database) -> Bool {
+        ["female", "male", "artist", "parody", "character"].allSatisfy {
+            !(database.translations[$0]?.isEmpty ?? true)
+        } && database.translations.values.reduce(0) { $0 + $1.count } >= 10_000
+    }
+
+    nonisolated private static func fetchUpdate() async throws -> Index? {
+        let defaults = UserDefaults.standard
+        let key = "tagTranslations.lastUpdateAttempt"
+        if let last = defaults.object(forKey: key) as? Date,
+           Date().timeIntervalSince(last) < 24 * 60 * 60 { return nil }
+        defaults.set(Date(), forKey: key)
+        struct Release: Decodable {
+            let tag_name: String
+            let assets: [Asset]
+            struct Asset: Decodable { let name: String; let browser_download_url: URL }
+        }
+        struct Upstream: Decodable {
+            let version: Int
+            let data: [Namespace]
+            struct Namespace: Decodable {
+                let namespace: String
+                let data: [String: Entry]
+            }
+            struct Entry: Decodable { let name: String }
+        }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 20
+        configuration.timeoutIntervalForResource = 90
+        configuration.httpAdditionalHeaders = ["User-Agent": "NHV-TagTranslations"]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        func download(_ url: URL) async throws -> Data {
+            let (file, response) = try await session.download(from: url)
+            defer { try? FileManager.default.removeItem(at: file) }
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200,
+                  let size = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+                  size < 64 * 1024 * 1024 else { throw URLError(.badServerResponse) }
+            return try Data(contentsOf: file)
+        }
+        let decoder = JSONDecoder()
+        let release = try decoder.decode(Release.self, from: await download(
+            URL(string: "https://api.github.com/repos/EhTagTranslation/Database/releases/latest")!))
+        let source = "EhTagTranslation/Database " + release.tag_name
+        let bundledURL = Bundle.main.url(forResource: "tag-translations", withExtension: "json", subdirectory: "TagTranslations")
+            ?? Bundle.main.url(forResource: "tag-translations", withExtension: "json")
+        for url in [bundledURL, cacheURL].compactMap({ $0 }) {
+            if let existing = try? decoder.decode(Database.self, from: Data(contentsOf: url)),
+               isValid(existing), source.compare(existing.source, options: .numeric) != .orderedDescending { return nil }
+        }
+        guard let asset = release.assets.first(where: { $0.name == "db.text.json" }),
+              asset.browser_download_url.scheme == "https",
+              asset.browser_download_url.host == "github.com",
+              asset.browser_download_url.path.hasPrefix("/EhTagTranslation/Database/releases/download/")
+        else { throw URLError(.badServerResponse) }
+        let upstream = try decoder.decode(Upstream.self, from: await download(asset.browser_download_url))
+        guard upstream.version == 7 else { throw URLError(.cannotParseResponse) }
+        var translations: [String: [String: String]] = [:]
+        for namespace in upstream.data {
+            translations[namespace.namespace] = namespace.data.compactMapValues {
+                let name = $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                return name.isEmpty ? nil : name
+            }
+        }
+        let database = Database(source: source, translations: translations)
+        guard isValid(database) else { throw URLError(.cannotParseResponse) }
+        let index = buildIndex(database)
+        try FileManager.default.createDirectory(at: cacheURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(database).write(to: cacheURL, options: .atomic)
+        return index
     }
 
     private struct Request {
