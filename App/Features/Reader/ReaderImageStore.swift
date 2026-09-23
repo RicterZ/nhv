@@ -28,25 +28,22 @@ final class ReaderImageStore {
     /// Continuous scrolling keeps decoded pages until scrolling settles so a
     /// page-boundary update cannot invalidate the live canvas mid-motion.
     func focus(on index: Int, urls: [URL?], retainsLoadedImages: Bool = false) {
-        guard !isClearingCache, urls.indices.contains(index) else { return }
-        var requested = urls[index..<min(urls.count, index + 3)].compactMap { $0 }
-        if index > 0, let previous = urls[index - 1] { requested.append(previous) }
-        wanted = Set(requested)
+        guard !isClearingCache, let window = ReaderImageWindow(index: index, urls: urls) else { return }
+        wanted = window.retained
         for url in Array(tasks.keys) where !wanted.contains(url) {
             tasks.removeValue(forKey: url)?.cancel()
         }
         if !retainsLoadedImages { trim(around: index, urls: urls) }
-        for url in requested where images[url] == nil && tasks[url] == nil {
+        for url in window.requested where images[url] == nil && tasks[url] == nil {
             tasks[url] = Task { [weak self] in await self?.load(url) }
         }
     }
 
     func trim(around index: Int, urls: [URL?]) {
-        guard urls.indices.contains(index) else { return }
+        guard let window = ReaderImageWindow(index: index, urls: urls) else { return }
         // Keep one previous decoded page for quick back navigation.
-        let retained = Set(urls[max(0, index - 1)..<min(urls.count, index + 3)].compactMap { $0 })
-        guard images.keys.contains(where: { !retained.contains($0) }) else { return }
-        images = images.filter { retained.contains($0.key) }
+        guard images.keys.contains(where: { !window.retained.contains($0) }) else { return }
+        images = images.filter { window.retained.contains($0.key) }
     }
 
     /// Stop background work without changing the displayed image or its zoom.
