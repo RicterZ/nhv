@@ -16,7 +16,7 @@ An unofficial nhentai client for iOS, built with Swift and SwiftUI.
 
 NHV requires **iOS 17 or later** and your own **nhentai API key**. After installation, open the app and enter your key. Your device must be able to reach the API and image services.
 
-[GitHub releases](https://github.com/RicterZ/nhv/releases) provide source code and, starting with 0.1.4, an **unsigned IPA** for sideloading. Download the IPA from the release's **Assets** section and sign it through AltStore Classic. There is no App Store / TestFlight build at present.
+[GitHub releases](https://github.com/RicterZ/nhv/releases) provide source code and, starting with 0.1.4, an **unsigned IPA** for sideloading. Publishing a release automatically builds and attaches the IPA; it may take a few minutes to appear under **Assets**. Download it and sign it through AltStore Classic. There is no App Store / TestFlight build at present.
 
 | Method | What you need | Best for |
 | --- | --- | --- |

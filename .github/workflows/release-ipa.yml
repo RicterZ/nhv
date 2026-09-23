@@ -1,0 +1,60 @@
+name: Release unsigned IPA
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-ipa:
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.3'
+
+      - name: Verify release version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          project_version="$(xcodebuild -project NHV.xcodeproj -scheme NHV -configuration Release -destination 'generic/platform=iOS' -showBuildSettings | awk '/^[[:space:]]*MARKETING_VERSION = / { print $3; exit }')"
+          test "$version" = "$project_version"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Build unsigned device app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project NHV.xcodeproj \
+            -scheme NHV \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/NHV.app"
+          test -d "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" = "$VERSION"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          ditto "$app" "$RUNNER_TEMP/Payload/NHV.app"
+          ditto -c -k --keepParent "$RUNNER_TEMP/Payload" "$RUNNER_TEMP/NHV-$VERSION-unsigned.ipa"
+          unzip -t "$RUNNER_TEMP/NHV-$VERSION-unsigned.ipa"
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/NHV-$VERSION-unsigned.ipa" --clobber
