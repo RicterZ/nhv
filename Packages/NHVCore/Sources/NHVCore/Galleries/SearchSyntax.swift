@@ -23,7 +23,7 @@ public struct SearchSyntax: Identifiable, Sendable, Equatable {
     ]
 
     public static func suggestions(for input: String) -> [SearchSyntax] {
-        let fragment = input[tokenStart(in: input)...]
+        let fragment = input[SearchTokenScanner(input).lastTokenStart...]
         let prefix = fragment.hasPrefix("-") ? fragment.dropFirst() : fragment[...]
         guard !prefix.contains(":"), !prefix.contains("\"") else { return [] }
         return all.filter {
@@ -33,7 +33,7 @@ public struct SearchSyntax: Identifiable, Sendable, Equatable {
     }
 
     public func applying(to input: String) -> String {
-        let start = Self.tokenStart(in: input)
+        let start = SearchTokenScanner(input).lastTokenStart
         let exclude = input[start...].hasPrefix("-") ? "-" : ""
         return String(input[..<start]) + exclude + insertion
     }
@@ -49,20 +49,6 @@ public struct SearchSyntax: Identifiable, Sendable, Equatable {
     }
 
     public static func isExcluding(in input: String) -> Bool {
-        input[tokenStart(in: input)...].hasPrefix("-")
-    }
-
-    private static func tokenStart(in input: String) -> String.Index {
-        var start = input.startIndex
-        var quoted = false
-        var escaped = false
-        for index in input.indices {
-            let character = input[index]
-            if escaped { escaped = false; continue }
-            if character == "\\" { escaped = true }
-            else if character == "\"" { quoted.toggle() }
-            else if character.isWhitespace && !quoted { start = input.index(after: index) }
-        }
-        return start
+        input[SearchTokenScanner(input).lastTokenStart...].hasPrefix("-")
     }
 }

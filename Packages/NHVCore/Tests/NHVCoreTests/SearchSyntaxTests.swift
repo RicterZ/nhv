@@ -24,6 +24,16 @@ import Testing
     #expect(SearchSyntax.suggestions(for: #"title:"some words" jt"#).map(\.id) == ["jtitle"])
 }
 
+@Test func syntaxCompletionUsesTheLastUnquotedUnescapedToken() throws {
+    let artist = try #require(SearchSyntax.all.first { $0.id == "artist" })
+    #expect(artist.applying(to: "one\\ two art") == "one\\ two artist:\"\"")
+    #expect(artist.applying(to: #"tag:"a \"quoted\" value" art"#) == #"tag:"a \"quoted\" value" artist:"""#)
+    #expect(SearchSyntax.suggestions(for: "one\\ two art").map(\.id) == ["artist"])
+    #expect(SearchSyntax.suggestions(for: "one\\ two -art").map(\.id) == ["artist"])
+    #expect(SearchSyntax.isExcluding(in: "one\\ two -art"))
+    #expect(!SearchSyntax.isExcluding(in: "one\\ two art"))
+}
+
 @Test(arguments: ["tag", "artist", "parody", "character", "group", "language", "category", "title", "jtitle", "phrase"])
 func quotedCompletionPlacesTypedTextInsideQuotes(id: String) throws {
     let syntax = try #require(SearchSyntax.all.first { $0.id == id })
