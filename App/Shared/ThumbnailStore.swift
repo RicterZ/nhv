@@ -132,12 +132,8 @@ final class ThumbnailStore {
             let recover = recover
             active[url] = Task { [weak self] in
                 do {
-                    let recovery: (@Sendable () async throws -> URL)?
-                    if let reference, let recover {
-                        recovery = { try await recover(reference) }
-                    } else { recovery = nil }
-                    let image = try await diskCache.image(for: url, cacheKey: reference?.cacheKey ?? url.path,
-                        session: session, maximumPixelSize: 600, recover: recovery)
+                    let image = try await diskCache.image(for: url, reference: reference,
+                        session: session, maximumPixelSize: 600, recover: recover)
                     try Task.checkCancellation()
                     guard let self else { return }
                     self.cache.insert(image, for: url)

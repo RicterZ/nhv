@@ -78,12 +78,8 @@ final class ReaderImageStore {
             var delay = min(30.0, pow(2, Double(min(failures, 5))))
             do {
                 let reference = references[url]
-                let recovery: (@Sendable () async throws -> URL)?
-                if let reference, let recover {
-                    recovery = { try await recover(reference) }
-                } else { recovery = nil }
-                let image = try await diskCache.image(for: url, cacheKey: reference?.cacheKey ?? url.path,
-                    session: session, maximumPixelSize: 4096, recover: recovery)
+                let image = try await diskCache.image(for: url, reference: reference,
+                    session: session, maximumPixelSize: 4096, recover: recover)
                 try Task.checkCancellation()
                 guard wanted.contains(url) else { return }
                 images[url] = image

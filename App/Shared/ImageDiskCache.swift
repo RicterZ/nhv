@@ -80,6 +80,18 @@ actor ImageDiskCache {
         return image
     }
 
+    func image(for url: URL, reference: GalleryImageReference?, session: URLSession,
+        maximumPixelSize: Int, recover: (@Sendable (GalleryImageReference) async throws -> URL)?) async throws -> UIImage {
+        let recovery: (@Sendable () async throws -> URL)?
+        if let reference, let recover {
+            recovery = { try await recover(reference) }
+        } else {
+            recovery = nil
+        }
+        return try await image(for: url, cacheKey: reference?.cacheKey ?? url.path,
+            session: session, maximumPixelSize: maximumPixelSize, recover: recovery)
+    }
+
     func sizeInBytes() throws -> Int64 {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
         let files = try FileManager.default.contentsOfDirectory(
