@@ -104,7 +104,8 @@ struct GalleryDetailView: View {
                         Button("Try Again") { Task { await load() } }
                     }.padding(24)
                 } else {
-                    ProgressView("Loading gallery…").padding(32)
+                    ProgressView("Loading gallery…")
+                        .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
         }
